@@ -1,0 +1,22 @@
+diff --git a/op-sqlite/session.js b/op-sqlite/session.js
+index ff84604e7998182ef78fbffc8d20019aaf76755e..0daae4cb87b1a74036598c87e89eb4144f4cf313 100644
+--- a/op-sqlite/session.js
++++ b/op-sqlite/session.js
+@@ -69,7 +69,7 @@ class OPSQLitePreparedQuery extends SQLitePreparedQuery {
+   run(placeholderValues) {
+     const params = fillPlaceholders(this.query.params, placeholderValues ?? {});
+     this.logger.logQuery(this.query.sql, params);
+-    return this.client.executeAsync(this.query.sql, params);
++    return this.client.execute(this.query.sql, params);
+   }
+   async all(placeholderValues) {
+     const { fields, joinsNotNullableMap, query, logger, customResultMapper, client } = this;
+@@ -105,7 +105,7 @@ class OPSQLitePreparedQuery extends SQLitePreparedQuery {
+   values(placeholderValues) {
+     const params = fillPlaceholders(this.query.params, placeholderValues ?? {});
+     this.logger.logQuery(this.query.sql, params);
+-    return this.client.executeRawAsync(this.query.sql, params);
++    return this.client.executeRaw(this.query.sql, params);
+   }
+   /** @internal */
+   isResponseInArrayMode() {
