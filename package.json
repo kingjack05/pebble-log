@@ -20,6 +20,7 @@
     "@op-engineering/op-sqlite": "^11.2.3",
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",
+    "@tanstack/react-query": "5.62.8",
     "babel-plugin-inline-import": "^3.0.0",
     "drizzle-orm": "^0.37.0",
     "expo": "~52.0.17",
