@@ -1,52 +1,99 @@
-import { db } from "@/localDB/db";
-import { useCount } from "@/localDB/hooks/count";
-import { countTable } from "@/localDB/schema";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Button, Text, View } from "react-native";
+import {
+  addBulletToCollection,
+  getCollectionBullets,
+} from "@/localDB/routers/bullets";
+import {
+  createDailyLog,
+  getDailyLogForToday,
+} from "@/localDB/routers/collection";
+import { useEffect, useState } from "react";
+import { Text, TextInput, View } from "react-native";
 
 export default function Index() {
-  const count = useQuery({
-    queryKey: ["count"],
-    queryFn: () => {
-      const countRes = db.$count(countTable);
-      return countRes;
-    },
-  });
+  const createDailyLogM = createDailyLog();
+  const getDailyLogForTodayQ = getDailyLogForToday();
+  const createDailyLogFunc = createDailyLogM.mutateAsync;
+  const isLoading = getDailyLogForTodayQ.isLoading;
+  const dailyLog = getDailyLogForTodayQ.data;
 
-  if (!count.data) {
-    return (
-      <View className="justify-center items-center flex-1">
-        <Text className="text-blue-600">Loading...</Text>
-      </View>
-    );
+  useEffect(() => {
+    if (!isLoading && !dailyLog) {
+      createDailyLogFunc()
+        .then(() => {
+          getDailyLogForTodayQ.refetch().then();
+        })
+        .catch(console.error);
+    }
+  }, [isLoading, dailyLog]);
+
+  if (!dailyLog) {
+    return <Text>Loading...</Text>;
   }
-  return <CountView count={count.data} />;
+
+  return <DailyLog collectionId={dailyLog.id} title={dailyLog.title} />;
 }
 
-const CountView = ({ count }: { count: number }) => {
-  const queryClient = useQueryClient();
-  const increment = useMutation({
-    mutationKey: ["count.increment"],
-    mutationFn: () => {
-      return db.insert(countTable).values({ count: count + 1 });
-    },
-    onSettled() {
-      queryClient.invalidateQueries({ queryKey: ["count"] });
-    },
-  });
+function DailyLog({
+  collectionId,
+  title,
+}: {
+  collectionId: number;
+  title: string;
+}) {
+  const collectionBulletsQ = getCollectionBullets(collectionId);
+  const bullets = collectionBulletsQ.data;
+
+  if (!bullets) {
+    return <Text>Loading...</Text>;
+  }
 
   return (
-    <View className="justify-center items-center flex-1">
-      <Text className="text-blue-600">
-        {count}
-        Edit app/index.tsx to edit this screen.
-      </Text>
-      <Button
-        title="Increment"
-        onPress={() => {
-          increment.mutate();
-        }}
+    <View className=" mt-1 ml-2">
+      {bullets.map(({ bullets }) => (
+        <View key={bullets.id}>
+          <Bullet id={bullets.id} text={bullets.text} />
+        </View>
+      ))}
+      <NewBullet
+        order={bullets.length + 1}
+        collectionId={collectionId}
+        afterBulletCreatedCB={collectionBulletsQ.refetch}
       />
     </View>
   );
-};
+}
+
+function Bullet({ id, text }: { id: number; text: string }) {
+  return <Text>{text}</Text>;
+}
+
+function NewBullet({
+  order,
+  collectionId,
+  afterBulletCreatedCB,
+}: {
+  order: number;
+  collectionId: number;
+  afterBulletCreatedCB: Function;
+}) {
+  const [text, setText] = useState("");
+  const [type, setType] =
+    useState<Parameters<typeof addBulletToCollection>[1]>("null");
+  const addBulletM = addBulletToCollection(text, type, order, collectionId);
+
+  return (
+    <View>
+      <TextInput
+        className=" border-b border-solid border-gray-600 w-20"
+        value={text}
+        onChangeText={setText}
+        onEndEditing={() => {
+          addBulletM.mutateAsync().then(() => {
+            afterBulletCreatedCB();
+          });
+        }}
+        placeholder="New bullet"
+      />
+    </View>
+  );
+}
