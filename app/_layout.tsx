@@ -3,12 +3,8 @@ import { Stack } from "expo-router";
 import { useMigrations } from "drizzle-orm/op-sqlite/migrator";
 import migrations from "../drizzle/migrations";
 import "../global.css";
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { db } from "@/localDB/db";
-
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
@@ -31,7 +27,9 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
     </QueryClientProvider>
   );
 }

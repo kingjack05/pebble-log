@@ -8,14 +8,16 @@ import {
 } from "@/localDB/routers/collection";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
+import { useColorScheme } from "nativewind";
+import { cn } from "@/lib/utils";
 
 export default function Index() {
+  const { colorScheme } = useColorScheme();
   const createDailyLogM = createDailyLog();
   const getDailyLogForTodayQ = getDailyLogForToday();
   const createDailyLogFunc = createDailyLogM.mutateAsync;
   const isLoading = getDailyLogForTodayQ.isLoading;
   const dailyLog = getDailyLogForTodayQ.data;
-
   useEffect(() => {
     if (!isLoading && !dailyLog) {
       createDailyLogFunc()
@@ -30,7 +32,16 @@ export default function Index() {
     return <Text>Loading...</Text>;
   }
 
-  return <DailyLog collectionId={dailyLog.id} title={dailyLog.title} />;
+  return (
+    <View
+      className={cn(
+        "flex flex-1 bg-background text-foreground",
+        colorScheme === "dark" && "dark"
+      )}
+    >
+      <DailyLog collectionId={dailyLog.id} title={dailyLog.title} />
+    </View>
+  );
 }
 
 function DailyLog({
@@ -48,7 +59,7 @@ function DailyLog({
   }
 
   return (
-    <View className=" mt-1 ml-2">
+    <View className="mt-1 ml-2">
       {bullets.map(({ bullets }) => (
         <View key={bullets.id}>
           <Bullet id={bullets.id} text={bullets.text} />
@@ -84,7 +95,7 @@ function NewBullet({
   return (
     <View>
       <TextInput
-        className=" border-b border-solid border-gray-600 w-20"
+        className=" border-b border-solid border-gray-600 w-20 placeholder:text-foreground"
         value={text}
         onChangeText={setText}
         onEndEditing={() => {
