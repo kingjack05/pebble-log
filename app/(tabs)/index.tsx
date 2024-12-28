@@ -32,16 +32,7 @@ export default function Index() {
     return <Text>Loading...</Text>;
   }
 
-  return (
-    <View
-      className={cn(
-        "flex flex-1 bg-background text-foreground",
-        colorScheme === "dark" && "dark"
-      )}
-    >
-      <DailyLog collectionId={dailyLog.id} title={dailyLog.title} />
-    </View>
-  );
+  return <DailyLog collectionId={dailyLog.id} title={dailyLog.title} />;
 }
 
 function DailyLog({
