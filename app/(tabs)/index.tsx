@@ -8,11 +8,8 @@ import {
 } from "@/localDB/routers/collection";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import { useColorScheme } from "nativewind";
-import { cn } from "@/lib/utils";
 
 export default function Index() {
-  const { colorScheme } = useColorScheme();
   const createDailyLogM = createDailyLog();
   const getDailyLogForTodayQ = getDailyLogForToday();
   const createDailyLogFunc = createDailyLogM.mutateAsync;

@@ -5,12 +5,14 @@ import {
   TabSlot,
   TabTriggerSlotProps,
 } from "expo-router/ui";
-import { Ref, forwardRef } from "react";
+import React, { Ref, forwardRef } from "react";
 import { Text, View, Pressable } from "react-native";
 import { useColorScheme } from "nativewind";
-import Svg, { Path, SvgProps } from "react-native-svg";
+import Svg, { Path, SvgProps, Circle } from "react-native-svg";
 import { cssInterop } from "nativewind";
+import { StatusBar } from "expo-status-bar";
 import { cn } from "@/lib/utils";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 cssInterop(Svg, {
   className: {
@@ -23,59 +25,175 @@ cssInterop(Svg, {
   },
 });
 
+/**
+ * Headless Tab Layout https://docs.expo.dev/router/advanced/custom-tabs/
+ */
 export default function Layout() {
   const { colorScheme } = useColorScheme();
   return (
-    <Tabs>
-      <View
-        className={cn(
-          "flex flex-1 bg-background text-foreground",
-          colorScheme === "dark" && "dark"
-        )}
-      >
-        <TabSlot />
-      </View>
-      <TabList asChild>
-        <View
+    <>
+      <Tabs>
+        <SafeAreaView
           className={cn(
-            "bg-background text-foreground border-t border-muted px-2",
+            "flex flex-1 bg-background text-foreground",
             colorScheme === "dark" && "dark"
           )}
         >
-          <TabTrigger name="home" href="/" asChild>
-            <DailyLogTab>Daily Log</DailyLogTab>
-          </TabTrigger>
-        </View>
-      </TabList>
-    </Tabs>
+          <TabSlot />
+        </SafeAreaView>
+        <TabList asChild>
+          <View
+            className={cn(
+              "bg-background text-foreground border-t border-muted px-2 pt-2 pb-1 flex",
+              colorScheme === "dark" && "dark"
+            )}
+            style={{ justifyContent: "center" }}
+          >
+            <TabTrigger name="home" href="/" asChild>
+              <TabItem
+                icon={(isFocused) => (
+                  <DailyLogIcon
+                    className={cn("text-muted", isFocused && "text-foreground")}
+                  />
+                )}
+              >
+                Daily
+              </TabItem>
+            </TabTrigger>
+            <TabTrigger name="collections" href="/(tabs)/collections" asChild>
+              <TabItem
+                icon={(isFocused) => (
+                  <CollectionsIcon
+                    className={cn("text-muted", isFocused && "text-foreground")}
+                  />
+                )}
+              >
+                Entries
+              </TabItem>
+            </TabTrigger>
+            <TabTrigger name="reflections" href="/reflections" asChild>
+              <TabItem
+                icon={(isFocused) => (
+                  <ReflectionsIcon
+                    className={cn("text-muted", isFocused && "text-foreground")}
+                  />
+                )}
+              >
+                Reflections
+              </TabItem>
+            </TabTrigger>
+            <TabTrigger name="others" href="/others" asChild>
+              <TabItem
+                icon={(isFocused) => (
+                  <OthersIcon
+                    className={cn("text-muted", isFocused && "text-foreground")}
+                  />
+                )}
+              >
+                Others
+              </TabItem>
+            </TabTrigger>
+          </View>
+        </TabList>
+      </Tabs>
+      <StatusBar style="auto" />
+    </>
   );
 }
 
+/**
+ * Icons from feather icons. https://feathericons.com
+ *
+ * Converted from svg with https://react-svgr.com/playground/?native=true&typescript=true
+ */
 const DailyLogIcon = (props: SvgProps) => (
-  <Svg width={40} height={40} viewBox="0 0 1200 1200" {...props}>
-    <Path
-      fill="currentColor"
-      d="M1078.6 600c0-.238-.238-.238-.238-.48 0-.239.238-.48 0-.72 0-.237-.48-.48-.48-.96-.239-.48-.481-.961-.962-1.442-.238-.48-.48-.718-.718-.96-.48-.239-.961-.481-1.442-.72-.48 0-.719-.48-1.199-.718l-356.28-67.32 82.078-120.24c0-.238 0-.719.238-.719 0-.48.239-.719.239-1.199 0-.238 0-.48-.239-.48.239-.239 0-.48 0-.72-.238-.48 0-.718-.238-.96 0-.238-.238-.238-.238-.238-.239 0-.239 0-.239-.239-.238 0-.238 0-.238-.238-.238 0-.238-.238-.238-.238-.238 0-.48 0-.719-.239-.238 0-.48-.238-.96-.238l-1.083-.012c-.238 0-.48.239-.96.239 0 .238-.481.238-.72.238l-120.24 82.078-67.684-357c0-.238-.48-.48-.48-.96-.238-.481-.48-.962-.961-1.442-.238-.48-.48-.48-.719-.961-.48-.239-.96-.48-1.441-.48-.48-.239-.48-.72-.961-.72-.238-.238-.48 0-.719 0s-.238-.238-.48-.238c-.239 0-.48.239-.48.239-.239 0-.481-.239-.72 0-.48 0-.718.48-.96.718-.72 0-1.2.239-1.442.48-.48.481-.719.481-.96.962-.239.48-.481.96-.72 1.441s-.48.719-.718.961l-67.32 356.52-120.48-82.078s-.239 0-.48-.238c-.239 0-.72-.239-.962-.239h-.718c-.239 0-.72.239-.961.481h-.48c-.24 0-.24.238-.481.238 0 .239 0 .239-.239.239v.238c-.238 0-.48 0-.48.238v.719c-.238.238-.48.719-.48.719v.96c.238.239.238.481.48.961v.48l82.078 120.48-356.52 67.32c-.238.24-.48.72-.961.72-.48.238-.96.48-1.441.718s-.48.48-.72.961c-.48.48-.718.961-.96 1.442 0 .48-.48.719-.48.96-.239.239 0 .481 0 .72 0 .238-.239.238-.239.48 0 .238.238.238.238.48 0 .239-.238.48 0 .72 0 .48.48.718.48 1.198.24.48.481.961.962 1.2 0 .238.238.48.48.718.48.48 1.2.72 1.801.961.48 0 .719.48.961.719l356.52 67.32L401.8 793.07v.719c-.238.238-.238.718-.48.96 0 .239 0 .239.238.72 0 .238 0 .718.238.96v.48c0 .24.238.24.48.481v.239h.239c.238.238.238.48.48.48 0 0 .48 0 .48.238.481 0 .72.239.962 0 .238.239.238.239.48.239.48 0 .961-.239 1.2-.48h.718l120.24-82.079 67.32 356.52c.238.48.48.719.719 1.2.238.48.48.96.719 1.199.238.238.238.48.48.718.48.48 1.2.72 2.04.961.48 0 .48.48.96.48.48.239.719.239 1.2.239.238 0 .718 0 1.199-.238.238 0 .48-.48.96-.48.72-.239 1.2-.481 1.801-.962.239-.238.48-.48.48-.718.481-.239.72-.72.72-1.2.238-.48.718-.718.718-1.199l67.56-356.52 120.24 82.078c.48 0 .718 0 .96.238.239 0 .48.239.719.239h.48c.481 0 .961-.239 1.2-.48h.718l.48-.481c.24-.239.24-.239.481-.719 0 0 0-.238.239-.48 0-.48.238-.72.238-1.2 0-.238 0-.238-.238-.48.238-.238 0-.48 0-.719-.239-.238 0-.719-.239-.719l-82.078-120.48 356.28-67.32c.48-.238.72-.718 1.2-.718.48-.239 1.199-.48 1.8-.961.239-.239.48-.48.48-.72.481-.237.481-.718.72-1.198.238-.48.718-.719.718-1.2.239-.238 0-.48 0-.718.016.246.254.246.254.008zm-555.96 68.398-31.922-6-296.4-56.16h390.72zm71.16-139.56v56.16L531.64 522.6l6-31.922 56.16-296.4zm68.637 180.48-56.16 296.4v-390.72l62.16 62.398zm8.762-115.56h-56.16l62.398-62.16 31.922 6 296.4 56.16z"
-    />
-    <Path
-      fill="currentColor"
-      d="m549.12 228 5.04-25.68c-184.08 21-330.6 167.4-351.84 351.6l25.68-4.8C250.68 382.68 382.68 250.68 549.12 228zM650.64 972l-5.04 25.68c184.44-20.879 331.2-167.4 352.08-351.72L972 650.878c-22.68 166.44-154.68 298.68-321.36 321.12zM972 549.12l25.68 5.04c-20.879-184.2-167.64-330.96-351.72-351.84l4.8 25.68C817.32 250.44 949.32 382.68 972 549.12zM228 650.64l-25.68-4.8c20.879 184.2 167.64 330.96 351.72 351.84L549.122 972c-166.44-22.68-298.68-154.68-321.12-321.36z"
-    />
+  <Svg
+    viewBox="0 0 24 24"
+    width={24}
+    height={24}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    {...props}
+  >
+    <Circle cx={12} cy={12} r={10} />
+    <Path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
+  </Svg>
+);
+const CollectionsIcon = (props: SvgProps) => (
+  <Svg
+    viewBox="0 0 24 24"
+    width={24}
+    height={24}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    className="feather feather-book-open"
+    {...props}
+  >
+    <Path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </Svg>
+);
+const ReflectionsIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    className="feather feather-rewind"
+    {...props}
+  >
+    <Path d="m11 19-9-7 9-7v14zM22 19l-9-7 9-7v14z" />
+  </Svg>
+);
+const OthersIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    className="feather feather-menu"
+    {...props}
+  >
+    <Path d="M3 12h18M3 6h18M3 18h18" />
   </Svg>
 );
 
-const DailyLogTab = forwardRef(
+export type TabItemProps = TabTriggerSlotProps & {
+  icon?: (isFocused: boolean) => React.JSX.Element;
+};
+const TabItem = forwardRef(
   (
-    { children, isFocused, className, ...props }: TabTriggerSlotProps,
+    { icon, children, isFocused, className, ...props }: TabItemProps,
     ref: Ref<View>
   ) => {
     return (
       <Pressable ref={ref} {...props}>
-        <View className={cn(className, isFocused && "text-foreground")}>
-          <DailyLogIcon
-            className={cn("text-muted", isFocused && "text-foreground")}
-          />
-          <Text className={cn(className, isFocused && "text-foreground")}>
+        <View
+          className={cn(
+            className,
+            "w-24 flex flex-col justify-center items-center",
+            isFocused && "text-foreground"
+          )}
+        >
+          {icon ? icon(!!isFocused) : null}
+          <Text
+            className={cn(
+              className,
+              isFocused ? "text-foreground" : "text-muted"
+            )}
+          >
             {children}
           </Text>
         </View>
