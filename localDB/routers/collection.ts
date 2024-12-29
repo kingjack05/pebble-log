@@ -26,3 +26,20 @@ export const getDailyLogForToday = () =>
       return res.length > 0 ? res[0] : null;
     },
   });
+
+export const updateCollectionTitle = () =>
+  useMutation({
+    mutationFn: async ({
+      collectionId,
+      title,
+    }: {
+      collectionId: number;
+      title: string;
+    }) => {
+      const mutation = db
+        .update(collections)
+        .set({ title })
+        .where(eq(collections.id, collectionId));
+      await mutation;
+    },
+  });
