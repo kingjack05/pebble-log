@@ -18,6 +18,7 @@ export const bullets = sqliteTable("bullets", {
       "note",
       "gratitude",
       "win",
+      "undefined",
       "null",
     ],
   }).notNull(),

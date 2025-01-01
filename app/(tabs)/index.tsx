@@ -1,3 +1,4 @@
+import { Bullet, NewBullet } from "@/components/Bullet";
 import {
   addBulletToCollection,
   getCollectionBullets,
@@ -14,7 +15,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Text, TextInput, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function Index() {
   const createDailyLogM = createDailyLog();
@@ -61,15 +68,20 @@ function DailyLog({
   }
 
   return (
-    <View className="mt-1 ml-2">
-      <View className="flex flex-row justify-start items-baseline">
-        <Text className="text-muted text-xs w-20">DAILY LOG</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      className="mt-1 ml-2 flex-1 justify-center overflow-scroll"
+    >
+      <View className="flex flex-row justify-start items-baseline mb-2">
+        <Text className="text-muted text-base w-32 text-center border border-dashed border-muted mr-2">
+          DAILY LOG
+        </Text>
         <CollectionTitle collectionId={collectionId} title={title} />
       </View>
 
       {bullets.map(({ bullets }) => (
         <View key={bullets.id}>
-          <Bullet id={bullets.id} text={bullets.text} />
+          <Bullet id={bullets.id} text={bullets.text} type={bullets.type} />
         </View>
       ))}
       <NewBullet
@@ -77,7 +89,7 @@ function DailyLog({
         collectionId={collectionId}
         afterBulletCreatedCB={collectionBulletsQ.refetch}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -90,76 +102,43 @@ function CollectionTitle({
 }) {
   const [text, setText] = useState(title);
   const minInputWidth = 36;
-  const [inputWidth, setInputWidth] = useState(minInputWidth);
+  const [underlineWidth, setUnderlineWidth] = useState(minInputWidth);
   const hiddenText = useRef<Text>(null);
   const updateTitleM = updateCollectionTitle();
 
-  const updateInputWidth = useCallback(() => {
-    // Setting input width dynamically here to prevent flickering
-    if (hiddenText.current) {
-      hiddenText.current.measure((x, y, measuredWidth) => {
-        setInputWidth(Math.max(minInputWidth, measuredWidth + 20)); // Add padding and set minimum width
-      });
-    }
-  }, []);
-  useEffect(() => {
-    updateInputWidth();
-  }, []);
-
   return (
     <>
-      <TextInput
-        style={{ width: inputWidth }}
-        className="border-b border-dotted border-muted text-foreground text-lg"
-        value={text}
-        onChangeText={(val) => {
-          setText(val);
-          updateInputWidth();
+      <View className="relative flex-1">
+        <TextInput
+          className="text-foreground text-xl flex-0"
+          defaultValue={title}
+          onChangeText={(val) => {
+            setText(val);
+          }}
+          onEndEditing={() => {
+            updateTitleM.mutateAsync({ collectionId, title: text }).then(() => {
+              console.log("Edited");
+            });
+          }}
+          onLayout={(event) => {
+            setUnderlineWidth(event.nativeEvent.layout.width);
+          }}
+        />
+        <View
+          className="absolute bottom-0 left-0 h-[1px] w-20 border-muted border-dotted border"
+          style={{ width: underlineWidth }}
+        />
+      </View>
+
+      <Text
+        ref={hiddenText}
+        onLayout={(event) => {
+          setUnderlineWidth(event.nativeEvent.layout.width);
         }}
-        onEndEditing={() => {
-          updateTitleM.mutateAsync({ collectionId, title: text }).then(() => {
-            console.log("Edited");
-          });
-        }}
-      />
-      <Text ref={hiddenText} className="opacity-0 absolute text-lg">
+        className="opacity-0 absolute text-lg"
+      >
         {text}
       </Text>
     </>
-  );
-}
-
-function Bullet({ id, text }: { id: number; text: string }) {
-  return <Text className="text-foreground">{text}</Text>;
-}
-
-function NewBullet({
-  order,
-  collectionId,
-  afterBulletCreatedCB,
-}: {
-  order: number;
-  collectionId: number;
-  afterBulletCreatedCB: Function;
-}) {
-  const [text, setText] = useState("");
-  const [type, setType] =
-    useState<Parameters<typeof addBulletToCollection>[1]>("null");
-  const addBulletM = addBulletToCollection(text, type, order, collectionId);
-
-  return (
-    <View>
-      <TextInput
-        className="border-b border-solid border-gray-600 w-20 text-foreground placeholder:text-muted"
-        value={text}
-        onChangeText={setText}
-        onEndEditing={() => {
-          addBulletM.mutateAsync().then(() => {
-            afterBulletCreatedCB();
-          });
-        }}
-        placeholder="New bullet"
-      />
-    </View>
   );
 }
