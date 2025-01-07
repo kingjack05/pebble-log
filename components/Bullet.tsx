@@ -1,45 +1,100 @@
 import { Pressable, Text, TextInput, View } from "react-native";
-import Svg, { Path, SvgProps, Circle } from "react-native-svg";
-import { cssInterop } from "nativewind";
-
+import { createStore } from "@xstate/store";
+import { bulletTypes } from "@/localDB/schema";
 import type { Bullet } from "@/localDB/schema";
-import React, { useState } from "react";
-import { addBulletToCollection } from "@/localDB/routers/bullets";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "@xstate/store/react";
+import {
+  addBulletToCollection,
+  updateBulletType,
+} from "@/localDB/routers/bullets";
+import { cn } from "@/lib/utils";
+import {
+  EventIcon,
+  GratitudeIcon,
+  NoteIcon,
+  NullIcon,
+  TaskDoneIcon,
+  TaskOpenIcon,
+  UndefinedIcon,
+  WinIcon,
+} from "./Bullet/icons";
 
-function BulletTypePicker({ type }: { type: Bullet["type"] }) {
-  const IconComponent = BulletTypeToIcon[type];
-  return (
-    <View>
-      <Pressable
-        onPress={() => {
-          console.log("Pressed", Math.random());
-        }}
-        style={{ padding: 8 }}
-      >
-        {IconComponent({
-          width: 20,
-          height: 20,
-          className: "text-foreground",
-        })}
-      </Pressable>
-    </View>
-  );
-}
+type BulletType = (typeof bulletTypes)[number];
+const draftBulletTypeStore = createStore({
+  context: {
+    isEditingBullet: false,
+    draftData: null as
+      | { draftType: "create" }
+      | { draftType: "edit"; bulletId: number }
+      | null,
+    type: "null" as BulletType,
+  },
+  on: {
+    initBulletEditing: (
+      context,
+      { bulletId, initType }: { bulletId: number; initType: BulletType }
+    ) => ({
+      isEditingBullet: true,
+      draftData: { draftType: "edit", bulletId } as const,
+      type: initType,
+    }),
+    endBulletEditing: (context) => ({ isEditingBullet: false }),
+    initBulletCreating: (context, { initType }: { initType: BulletType }) => ({
+      isEditingBullet: true,
+      draftData: { draftType: "create" } as const,
+      type: initType,
+    }),
+    endBulletCreating: (context) => ({ isEditingBullet: false }),
+    setType: (context, event: { newType: BulletType }) => ({
+      type: event.newType,
+    }),
+  },
+});
 
 export function Bullet({
   id,
-  text,
-  type,
+  initText,
+  initType,
 }: {
   id: number;
-  text: string;
-  type: Bullet["type"];
+  initText: string;
+  initType: Bullet["type"];
 }) {
+  const [type, setType] = useState(initType);
+  const draftType = useSelector(
+    draftBulletTypeStore,
+    (state) => state.context.type
+  );
+  const [isFocused, setIsFocused] = useState(false);
   const IconComponent = BulletTypeToIcon[type];
+
+  useEffect(() => {
+    if (isFocused) {
+      setType(draftType);
+    }
+  }, [isFocused, draftType]);
+
   return (
-    <View className="flex flex-row">
-      {IconComponent({ width: 12, className: "text-foreground" })}
-      <TextInput className="ml-2 text-foreground" defaultValue={text} />
+    <View className="flex flex-row items-center">
+      <IconComponent width={14} height={14} className="text-foreground mr-2" />
+      <TextInput
+        className="text-foreground text-lg flex-1"
+        defaultValue={initText}
+        onFocus={() => {
+          setIsFocused(true);
+          draftBulletTypeStore.send({
+            type: "initBulletEditing",
+            bulletId: id,
+            initType: type,
+          });
+        }}
+        onBlur={() => {
+          // unsure if this can lead to a race condition, ie: if focus gets transefered to another Bullet and onBlur gets triggered after onFocus
+          setIsFocused(false);
+          draftBulletTypeStore.send({ type: "endBulletEditing" });
+        }}
+      />
     </View>
   );
 }
@@ -56,13 +111,26 @@ export function NewBullet({
   const [text, setText] = useState("");
   const [type, setType] =
     useState<Parameters<typeof addBulletToCollection>[1]>("undefined");
+  const [isFocused, setIsFocused] = useState(false);
+  const draftType = useSelector(
+    draftBulletTypeStore,
+    (state) => state.context.type
+  );
+  const IconComponent = BulletTypeToIcon[type];
+
+  useEffect(() => {
+    if (isFocused) {
+      setType(draftType);
+    }
+  }, [isFocused, draftType]);
+
   const addBulletM = addBulletToCollection(text, type, order, collectionId);
 
   return (
-    <View className="flex flex-row">
-      <BulletTypePicker type={type} />
+    <View className="flex flex-row items-center">
+      <IconComponent width={14} height={14} className="text-foreground mr-2" />
       <TextInput
-        className="border-b border-solid border-gray-600 w-20 text-foreground placeholder:text-muted ml-2"
+        className="text-foreground text-lg flex-1"
         value={text}
         onChangeText={setText}
         onEndEditing={() => {
@@ -71,135 +139,108 @@ export function NewBullet({
             afterBulletCreatedCB();
           });
         }}
+        onFocus={() => {
+          setIsFocused(true);
+          draftBulletTypeStore.send({
+            type: "initBulletCreating",
+            initType: type,
+          });
+        }}
+        onBlur={() => {
+          setIsFocused(false);
+          draftBulletTypeStore.send({ type: "endBulletCreating" });
+        }}
         placeholder="New bullet"
+        placeholderTextColor="hsl(0, 0%, 40%)"
       />
     </View>
   );
 }
 
-cssInterop(Svg, {
-  className: {
-    target: "style",
-    nativeStyleToProp: {
-      width: true,
-      height: true,
-      fill: true,
-    },
-  },
-});
+export function BulletTypeEditorKeyboardToolbar() {
+  const { isEditingBullet, draftData, type } = useSelector(
+    draftBulletTypeStore,
+    ({ context }) => context
+  );
+  const updateBulletTypeM = updateBulletType();
 
-const TaskOpenIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    {...props}
-  >
-    <Circle cx={12} cy={12} r={10} />
-  </Svg>
-);
-const TaskDoneIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    {...props}
-  >
-    <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <Path d="M22 4 12 14.01l-3-3" />
-  </Svg>
-);
-const EventIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    {...props}
-  >
-    <Circle cx={12} cy={12} r={10} />
-    <Circle cx={12} cy={12} r={3} />
-  </Svg>
-);
-const NoteIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    className="feather feather-minus"
-    {...props}
-  >
-    <Path d="M5 12h14" />
-  </Svg>
-);
-const GratitudeIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    {...props}
-  >
-    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </Svg>
-);
-const WinIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    {...props}
-  >
-    <Path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-  </Svg>
-);
-const UndefinedIcon = (props: SvgProps) => (
-  <Svg
-    width={24}
-    height={24}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeDasharray="1,3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={2}
-    {...props}
-  >
-    <Circle cx={12} cy={12} r={10} />
-  </Svg>
-);
-const NullIcon = (props: SvgProps) => {
-  return null;
-};
+  if (!isEditingBullet || !draftData) {
+    return null;
+  }
+
+  return (
+    <View className="flex flex-row border-t border-muted justify-center items-center">
+      <View className="flex-1 flex flex-row">
+        {bulletTypes.map((val) => {
+          const IconComponent = BulletTypeToIcon[val];
+          if (val === "null") {
+            return;
+          }
+          return (
+            <Pressable
+              key={val}
+              style={{ padding: 12, paddingHorizontal: 9 }}
+              onPress={() => {
+                if (draftData.draftType === "edit") {
+                  const bulletId = draftData.bulletId;
+                  updateBulletTypeM.mutate(
+                    { bulletId, type: val },
+                    {
+                      onSuccess: () => {
+                        draftBulletTypeStore.send({
+                          type: "setType",
+                          newType: val,
+                        });
+                      },
+                    }
+                  );
+                } else if (draftData.draftType === "create") {
+                  draftBulletTypeStore.send({
+                    type: "setType",
+                    newType: val,
+                  });
+                }
+              }}
+            >
+              <IconComponent
+                width={20}
+                height={20}
+                className={cn(type === val ? "text-foreground" : "text-muted")}
+              />
+            </Pressable>
+          );
+        })}
+      </View>
+      <Pressable
+        className="flex-none"
+        onPress={() => {
+          if (draftData.draftType === "edit") {
+            const bulletId = draftData.bulletId;
+            updateBulletTypeM.mutate(
+              { bulletId, type: "null" },
+              {
+                onSuccess: () => {
+                  draftBulletTypeStore.send({
+                    type: "setType",
+                    newType: "null",
+                  });
+                },
+              }
+            );
+          } else if (draftData.draftType === "create") {
+            draftBulletTypeStore.send({
+              type: "setType",
+              newType: "null",
+            });
+          }
+        }}
+      >
+        <Text className="text-muted text-sm">set to null</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const BulletTypeToIcon = {
   "task.open": TaskOpenIcon,
   "task.done": TaskDoneIcon,

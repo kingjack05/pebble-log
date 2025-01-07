@@ -21,6 +21,7 @@
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",
     "@tanstack/react-query": "5.62.8",
+    "@xstate/store": "^2.6.2",
     "babel-plugin-inline-import": "^3.0.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.37.0",

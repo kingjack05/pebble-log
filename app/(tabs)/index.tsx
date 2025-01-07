@@ -1,27 +1,18 @@
-import { Bullet, NewBullet } from "@/components/Bullet";
 import {
-  addBulletToCollection,
-  getCollectionBullets,
-} from "@/localDB/routers/bullets";
+  Bullet,
+  BulletTypeEditorKeyboardToolbar,
+  NewBullet,
+} from "@/components/Bullet";
+import { useKeyboard } from "@/hooks/keyboard";
+import { cn } from "@/lib/utils";
+import { getCollectionBullets } from "@/localDB/routers/bullets";
 import {
   createDailyLog,
   getDailyLogForToday,
   updateCollectionTitle,
 } from "@/localDB/routers/collection";
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ScrollView, Text, TextInput, View } from "react-native";
 
 export default function Index() {
   const createDailyLogM = createDailyLog();
@@ -62,34 +53,42 @@ function DailyLog({
 }) {
   const collectionBulletsQ = getCollectionBullets(collectionId);
   const bullets = collectionBulletsQ.data;
-
+  const { open } = useKeyboard();
   if (!bullets) {
     return <Text>Loading...</Text>;
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="mt-1 ml-2 flex-1 justify-center overflow-scroll"
-    >
-      <View className="flex flex-row justify-start items-baseline mb-2">
-        <Text className="text-muted text-base w-32 text-center border border-dashed border-muted mr-2">
-          DAILY LOG
-        </Text>
-        <CollectionTitle collectionId={collectionId} title={title} />
-      </View>
+    <>
+      <View className="flex-1">
+        <ScrollView>
+          <View className="flex flex-row justify-start items-baseline mb-2">
+            <Text className="text-muted text-base w-32 text-center border border-dashed border-muted mr-2">
+              DAILY LOG
+            </Text>
+            <CollectionTitle collectionId={collectionId} title={title} />
+          </View>
 
-      {bullets.map(({ bullets }) => (
-        <View key={bullets.id}>
-          <Bullet id={bullets.id} text={bullets.text} type={bullets.type} />
-        </View>
-      ))}
-      <NewBullet
-        order={bullets.length + 1}
-        collectionId={collectionId}
-        afterBulletCreatedCB={collectionBulletsQ.refetch}
-      />
-    </KeyboardAvoidingView>
+          {bullets.map(({ bullets }) => (
+            <View key={bullets.id}>
+              <Bullet
+                id={bullets.id}
+                initText={bullets.text}
+                initType={bullets.type}
+              />
+            </View>
+          ))}
+          <NewBullet
+            order={bullets.length + 1}
+            collectionId={collectionId}
+            afterBulletCreatedCB={collectionBulletsQ.refetch}
+          />
+        </ScrollView>
+      </View>
+      <View className={cn("flex-none text-foreground", !open && "hidden")}>
+        <BulletTypeEditorKeyboardToolbar />
+      </View>
+    </>
   );
 }
 
@@ -116,9 +115,9 @@ function CollectionTitle({
             setText(val);
           }}
           onEndEditing={() => {
-            updateTitleM.mutateAsync({ collectionId, title: text }).then(() => {
-              console.log("Edited");
-            });
+            updateTitleM
+              .mutateAsync({ collectionId, title: text })
+              .then(() => {});
           }}
           onLayout={(event) => {
             setUnderlineWidth(event.nativeEvent.layout.width);
@@ -135,7 +134,7 @@ function CollectionTitle({
         onLayout={(event) => {
           setUnderlineWidth(event.nativeEvent.layout.width);
         }}
-        className="opacity-0 absolute text-lg"
+        className="opacity-0 absolute text-xl"
       >
         {text}
       </Text>

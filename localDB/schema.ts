@@ -8,19 +8,21 @@ import {
 import { createSelectSchema } from "drizzle-zod";
 import { localDateQuery, utcDateTimeQuery } from "./commonQueries";
 
+export const bulletTypes = [
+  "task.open",
+  "task.done",
+  "event",
+  "note",
+  "gratitude",
+  "win",
+  "undefined",
+  "null",
+] as const;
+
 export const bullets = sqliteTable("bullets", {
   id: integer().primaryKey({ autoIncrement: true }),
   type: text({
-    enum: [
-      "task.open",
-      "task.done",
-      "event",
-      "note",
-      "gratitude",
-      "win",
-      "undefined",
-      "null",
-    ],
+    enum: bulletTypes,
   }).notNull(),
   text: text().notNull(),
   reflection: text(),

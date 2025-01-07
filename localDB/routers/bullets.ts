@@ -34,3 +34,20 @@ export const addBulletToCollection = (
       await addBulletToCollection;
     },
   });
+
+export const updateBulletType = () =>
+  useMutation({
+    mutationFn: async ({
+      bulletId,
+      type,
+    }: {
+      bulletId: number;
+      type: Bullet["type"];
+    }) => {
+      const mutation = db
+        .update(bullets)
+        .set({ type })
+        .where(eq(bullets.id, bulletId));
+      await mutation;
+    },
+  });

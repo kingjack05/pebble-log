@@ -5,14 +5,15 @@ import {
   TabSlot,
   TabTriggerSlotProps,
 } from "expo-router/ui";
-import React, { Ref, forwardRef, useEffect, useState } from "react";
-import { Text, View, Pressable, Keyboard } from "react-native";
+import React, { Ref, forwardRef } from "react";
+import { Text, View, Pressable, ScrollView, Platform } from "react-native";
 import { useColorScheme } from "nativewind";
 import Svg, { Path, SvgProps, Circle } from "react-native-svg";
 import { cssInterop } from "nativewind";
 import { StatusBar } from "expo-status-bar";
 import { cn } from "@/lib/utils";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useKeyboard } from "@/hooks/keyboard";
 
 cssInterop(Svg, {
   className: {
@@ -30,32 +31,14 @@ cssInterop(Svg, {
  */
 export default function Layout() {
   const { colorScheme } = useColorScheme();
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
+  const { open: kbOpen, height: kbHeight } = useKeyboard();
 
   return (
     <>
       <Tabs>
         <SafeAreaView
           className={cn(
-            "flex flex-1 bg-background text-foreground",
+            "flex-1 bg-background text-foreground",
             colorScheme === "dark" && "dark"
           )}
         >
@@ -66,7 +49,7 @@ export default function Layout() {
             className={cn(
               "bg-background text-foreground border-t border-muted px-2 pt-2 pb-1",
               colorScheme === "dark" && "dark",
-              isKeyboardVisible ? "hidden" : "flex"
+              kbOpen ? "hidden" : "flex"
             )}
             style={{ justifyContent: "center" }}
           >
