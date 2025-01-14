@@ -1,11 +1,13 @@
 import { Pressable, Text, TextInput, View } from "react-native";
 import { createStore } from "@xstate/store";
 import { bulletTypes } from "@/localDB/schema";
-import type { Bullet } from "@/localDB/schema";
-import React, { useEffect, useRef, useState } from "react";
+import type { Bullet, BulletType } from "@/localDB/schema";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "@xstate/store/react";
 import {
-  addBulletToCollection,
+  useAddBulletToCollection,
+  deleteBullet,
+  updateBulletText,
   updateBulletType,
 } from "@/localDB/routers/bullets";
 import { cn } from "@/lib/utils";
@@ -19,8 +21,9 @@ import {
   UndefinedIcon,
   WinIcon,
 } from "./Bullet/icons";
+import { useMutation } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/debounce";
 
-type BulletType = (typeof bulletTypes)[number];
 const draftBulletTypeStore = createStore({
   context: {
     isEditingBullet: false,
@@ -61,6 +64,7 @@ export function Bullet({
   initText: string;
   initType: Bullet["type"];
 }) {
+  const [text, setText] = useState(initText);
   const [type, setType] = useState(initType);
   const draftType = useSelector(
     draftBulletTypeStore,
@@ -74,13 +78,26 @@ export function Bullet({
       setType(draftType);
     }
   }, [isFocused, draftType]);
+  const { mutate: updateBulletTextMutate } = useMutation({
+    mutationFn: updateBulletText,
+  });
+  const { mutate: deleteBulletMutate } = useMutation({
+    mutationFn: deleteBullet,
+  });
+  const updateBulletTextDebounced = useDebounce(() => {
+    updateBulletTextMutate({ bulletId: id, text });
+  });
 
   return (
     <View className="flex flex-row items-center">
       <IconComponent width={14} height={14} className="text-foreground mr-2" />
       <TextInput
         className="text-foreground text-lg flex-1"
-        defaultValue={initText}
+        value={text}
+        onChangeText={(newText) => {
+          setText(newText);
+          updateBulletTextDebounced();
+        }}
         onFocus={() => {
           setIsFocused(true);
           draftBulletTypeStore.send({
@@ -88,6 +105,11 @@ export function Bullet({
             bulletId: id,
             initType: type,
           });
+        }}
+        onKeyPress={({ nativeEvent: { key } }) => {
+          if (key === "Backspace" && text === "") {
+            deleteBulletMutate({ bulletId: id });
+          }
         }}
         onBlur={() => {
           // unsure if this can lead to a race condition, ie: if focus gets transefered to another Bullet and onBlur gets triggered after onFocus
@@ -102,16 +124,14 @@ export function Bullet({
 export function NewBullet({
   order,
   collectionId,
-  afterBulletCreatedCB,
 }: {
   order: number;
   collectionId: number;
-  afterBulletCreatedCB: Function;
 }) {
   const [text, setText] = useState("");
-  const [type, setType] =
-    useState<Parameters<typeof addBulletToCollection>[1]>("undefined");
+  const [type, setType] = useState<BulletType>("undefined");
   const [isFocused, setIsFocused] = useState(false);
+
   const draftType = useSelector(
     draftBulletTypeStore,
     (state) => state.context.type
@@ -124,36 +144,48 @@ export function NewBullet({
     }
   }, [isFocused, draftType]);
 
-  const addBulletM = addBulletToCollection(text, type, order, collectionId);
+  const { mutate } = useAddBulletToCollection();
 
   return (
-    <View className="flex flex-row items-center">
-      <IconComponent width={14} height={14} className="text-foreground mr-2" />
-      <TextInput
-        className="text-foreground text-lg flex-1"
-        value={text}
-        onChangeText={setText}
-        onEndEditing={() => {
-          addBulletM.mutateAsync().then(() => {
-            setText("");
-            afterBulletCreatedCB();
-          });
-        }}
-        onFocus={() => {
-          setIsFocused(true);
-          draftBulletTypeStore.send({
-            type: "initBulletCreating",
-            initType: type,
-          });
-        }}
-        onBlur={() => {
-          setIsFocused(false);
-          draftBulletTypeStore.send({ type: "endBulletCreating" });
-        }}
-        placeholder="New bullet"
-        placeholderTextColor="hsl(0, 0%, 40%)"
-      />
-    </View>
+    <>
+      <View className="flex flex-row items-center">
+        <IconComponent
+          width={14}
+          height={14}
+          className="text-foreground mr-2"
+        />
+        <TextInput
+          className="text-foreground text-lg flex-1"
+          value={text}
+          onChangeText={(newText) => {
+            setText(newText);
+          }}
+          onEndEditing={() => {
+            mutate(
+              { collectionId, order, text, type },
+              {
+                onSuccess: () => {
+                  setText("");
+                },
+              }
+            );
+          }}
+          onFocus={() => {
+            setIsFocused(true);
+            draftBulletTypeStore.send({
+              type: "initBulletCreating",
+              initType: type,
+            });
+          }}
+          onBlur={() => {
+            setIsFocused(false);
+            draftBulletTypeStore.send({ type: "endBulletCreating" });
+          }}
+          placeholder="New bullet"
+          placeholderTextColor="hsl(0, 0%, 40%)"
+        />
+      </View>
+    </>
   );
 }
 

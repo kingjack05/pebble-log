@@ -18,7 +18,7 @@ export const bulletTypes = [
   "undefined",
   "null",
 ] as const;
-
+export type BulletType = (typeof bulletTypes)[number];
 export const bullets = sqliteTable("bullets", {
   id: integer().primaryKey({ autoIncrement: true }),
   type: text({

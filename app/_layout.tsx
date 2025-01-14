@@ -3,11 +3,21 @@ import { Stack } from "expo-router";
 import { useMigrations } from "drizzle-orm/op-sqlite/migrator";
 import migrations from "../drizzle/migrations";
 import "../global.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { db } from "@/localDB/db";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-const queryClient = new QueryClient();
 
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+    },
+  }),
+});
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
   if (error) {

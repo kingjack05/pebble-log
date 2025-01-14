@@ -5,7 +5,7 @@ import {
 } from "@/components/Bullet";
 import { useKeyboard } from "@/hooks/keyboard";
 import { cn } from "@/lib/utils";
-import { getCollectionBullets } from "@/localDB/routers/bullets";
+import { useCollectionBullets } from "@/localDB/routers/bullets";
 import {
   createDailyLog,
   getDailyLogForToday,
@@ -34,13 +34,7 @@ export default function Index() {
     return <Text>Loading...</Text>;
   }
 
-  return (
-    <DailyLog
-      collectionId={dailyLog.id}
-      title={dailyLog.title}
-      titleEditedCB={getDailyLogForTodayQ.refetch().then}
-    />
-  );
+  return <DailyLog collectionId={dailyLog.id} title={dailyLog.title} />;
 }
 
 function DailyLog({
@@ -49,9 +43,8 @@ function DailyLog({
 }: {
   collectionId: number;
   title: string;
-  titleEditedCB: Function;
 }) {
-  const collectionBulletsQ = getCollectionBullets(collectionId);
+  const collectionBulletsQ = useCollectionBullets(collectionId);
   const bullets = collectionBulletsQ.data;
   const { open } = useKeyboard();
   if (!bullets) {
@@ -78,11 +71,7 @@ function DailyLog({
               />
             </View>
           ))}
-          <NewBullet
-            order={bullets.length + 1}
-            collectionId={collectionId}
-            afterBulletCreatedCB={collectionBulletsQ.refetch}
-          />
+          <NewBullet order={bullets.length + 1} collectionId={collectionId} />
         </ScrollView>
       </View>
       <View className={cn("flex-none text-foreground", !open && "hidden")}>

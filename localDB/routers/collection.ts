@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { db } from "../db";
-import { bullets, collections } from "../schema";
-import { eq, sql } from "drizzle-orm";
+import { collections } from "../schema";
+import { eq } from "drizzle-orm";
 import { localDateQuery } from "../commonQueries";
 
 export const createDailyLog = () =>
