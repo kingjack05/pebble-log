@@ -165,7 +165,9 @@ export function NewBullet({
               { collectionId, order, text, type },
               {
                 onSuccess: () => {
-                  setText("");
+                  setTimeout(() => {
+                    setText("");
+                  }, 100);
                 },
               }
             );
