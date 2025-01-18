@@ -23,6 +23,14 @@ import {
 } from "./icons";
 import { useMutation } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/debounce";
+import {
+  Gesture,
+  GestureDetector,
+  GestureStateChangeEvent,
+  GestureUpdateEvent,
+  PanGestureChangeEventPayload,
+  PanGestureHandlerEventPayload,
+} from "react-native-gesture-handler";
 
 const draftBulletTypeStore = createStore({
   context: {
@@ -59,10 +67,25 @@ export function Bullet({
   id,
   initText,
   initType,
+  onStartDrag = () => {},
+  onDragBullet = () => {},
+  onEndDrag = () => {},
 }: {
   id: number;
   initText: string;
   initType: Bullet["type"];
+  onStartDrag?: (
+    event: GestureStateChangeEvent<PanGestureHandlerEventPayload>
+  ) => void;
+  onDragBullet?: (
+    event: GestureUpdateEvent<
+      PanGestureHandlerEventPayload & PanGestureChangeEventPayload
+    >
+  ) => void;
+  onEndDrag?: (
+    event: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
+    success: boolean
+  ) => void;
 }) {
   const [text, setText] = useState(initText);
   const [type, setType] = useState(initType);
@@ -87,10 +110,24 @@ export function Bullet({
   const updateBulletTextDebounced = useDebounce(() => {
     updateBulletTextMutate({ bulletId: id, text });
   });
+  const drag = Gesture.Pan()
+    .onStart(onStartDrag)
+    .onChange(onDragBullet)
+    .onEnd(onEndDrag)
+    .runOnJS(true);
 
   return (
     <View className="flex flex-row items-center">
-      <IconComponent width={14} height={14} className="text-foreground mr-2" />
+      <GestureDetector gesture={drag}>
+        <View style={{ paddingVertical: 8, paddingLeft: 4 }}>
+          <IconComponent
+            width={20}
+            height={20}
+            className="text-foreground mr-2"
+          />
+        </View>
+      </GestureDetector>
+
       <TextInput
         className="text-foreground text-lg flex-1"
         value={text}
@@ -149,11 +186,13 @@ export function NewBullet({
   return (
     <>
       <View className="flex flex-row items-center">
-        <IconComponent
-          width={14}
-          height={14}
-          className="text-foreground mr-2"
-        />
+        <View style={{ paddingVertical: 8, paddingLeft: 4 }}>
+          <IconComponent
+            width={20}
+            height={20}
+            className="text-foreground mr-2"
+          />
+        </View>
         <TextInput
           className="text-foreground text-lg flex-1"
           value={text}

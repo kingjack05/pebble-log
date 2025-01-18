@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { db } from "../db";
-import { collections } from "../schema";
+import { bulletsToCollections, collections } from "../schema";
 import { eq } from "drizzle-orm";
 import { localDateQuery } from "../commonQueries";
 
@@ -43,3 +43,64 @@ export const updateCollectionTitle = () =>
       await mutation;
     },
   });
+
+const bulletOrderSpacing = 100;
+export const reorderBullet = async ({
+  bulletId,
+  collectionId,
+  toIndex,
+}: {
+  bulletId: number;
+  collectionId: number;
+  toIndex: number;
+}) => {
+  const mutation = db.transaction(async (tx) => {
+    const bulletsInCollection = await tx
+      .select()
+      .from(bulletsToCollections)
+      .where(eq(bulletsToCollections.collectionId, collectionId))
+      .orderBy(bulletsToCollections.order);
+
+    const isInsertingToFirst = toIndex === 0;
+    const isInsertingToLast = toIndex === bulletsInCollection.length;
+    const beforeItemOrder = isInsertingToFirst
+      ? 0
+      : bulletsInCollection[toIndex - 1].order;
+    const nextItemOrder = isInsertingToLast
+      ? bulletsInCollection[toIndex - 1].order
+      : bulletsInCollection[toIndex].order;
+
+    const needsRebalancing = nextItemOrder - beforeItemOrder === 1;
+    if (needsRebalancing) {
+      const bulletsBefore = bulletsInCollection
+        .slice(0, toIndex)
+        .filter((i) => i.bulletId !== bulletId);
+      const bulletsAfter = bulletsInCollection
+        .slice(toIndex)
+        .filter((i) => i.bulletId !== bulletId);
+      const reorderedBullets = [
+        ...bulletsBefore,
+        bulletsInCollection.find((i) => i.bulletId === bulletId)!,
+        ...bulletsAfter,
+      ];
+      const transaction = reorderedBullets.map((i, index) =>
+        tx
+          .update(bulletsToCollections)
+          .set({
+            order: (index + 1) * bulletOrderSpacing,
+          })
+          .where(eq(bulletsToCollections.bulletId, i.bulletId))
+      );
+      await Promise.allSettled(transaction);
+    } else {
+      const itemNewOrder = isInsertingToLast
+        ? nextItemOrder + bulletOrderSpacing
+        : beforeItemOrder + Math.floor((nextItemOrder - beforeItemOrder) / 2);
+      await tx
+        .update(bulletsToCollections)
+        .set({ order: itemNewOrder })
+        .where(eq(bulletsToCollections.bulletId, bulletId));
+    }
+  });
+  await mutation;
+};
