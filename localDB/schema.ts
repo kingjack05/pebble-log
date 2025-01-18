@@ -1,5 +1,6 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  check,
   integer,
   primaryKey,
   sqliteTable,
@@ -68,6 +69,7 @@ export const bulletsToCollections = sqliteTable(
   (table) => {
     return {
       id: primaryKey({ columns: [table.bulletId, table.collectionId] }),
+      orderIsPositive: check("orderIsPositive", sql`${table.order} > 0`),
     };
   }
 );

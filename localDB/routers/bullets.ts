@@ -22,6 +22,7 @@ export const getCollectionBullets = async ({
     .from(bulletsToCollections)
     .innerJoin(bullets, eq(bulletsToCollections.bulletId, bullets.id))
     .where(eq(bulletsToCollections.collectionId, collectionId))
+    .orderBy(bulletsToCollections.order)
     .all();
   return res;
 };
