@@ -34,6 +34,13 @@ export const bulletsRelations = relations(bullets, ({ many }) => ({
   bulletsToCollections: many(bulletsToCollections),
 }));
 
+export const collectionTypes = [
+  "daily",
+  "weekly",
+  "monthly",
+  "custom",
+] as const;
+export type CollectionType = (typeof collectionTypes)[number];
 export const collections = sqliteTable("collections", {
   id: integer().primaryKey({ autoIncrement: true }),
   type: text({

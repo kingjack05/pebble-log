@@ -20,7 +20,7 @@ import {
   TaskOpenIcon,
   UndefinedIcon,
   WinIcon,
-} from "./Bullet/icons";
+} from "./icons";
 import { useMutation } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/debounce";
 
