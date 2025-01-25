@@ -123,5 +123,5 @@ export const UndefinedIcon = (props: SvgProps) => (
   </Svg>
 );
 export const NullIcon = (props: SvgProps) => {
-  return null;
+  return <Svg {...props} />;
 };

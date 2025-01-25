@@ -10,6 +10,9 @@ import {
 } from "@tanstack/react-query";
 import { db } from "@/localDB/db";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useColorScheme } from "nativewind";
+import { cn } from "@/lib/utils";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
@@ -20,6 +23,8 @@ const queryClient = new QueryClient({
 });
 export default function RootLayout() {
   const { success, error } = useMigrations(db, migrations);
+  const { colorScheme } = useColorScheme();
+
   if (error) {
     return (
       <View>
@@ -27,7 +32,6 @@ export default function RootLayout() {
       </View>
     );
   }
-
   if (!success) {
     return (
       <View>
@@ -35,12 +39,25 @@ export default function RootLayout() {
       </View>
     );
   }
-
   return (
     <GestureHandlerRootView>
       <QueryClientProvider client={queryClient}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack
+          screenOptions={{ headerShown: false }}
+          screenLayout={({ children }) => {
+            return (
+              <SafeAreaView
+                className={cn(
+                  "flex-1 bg-background text-foreground",
+                  colorScheme === "dark" && "dark"
+                )}
+              >
+                {children}
+              </SafeAreaView>
+            );
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
         </Stack>
       </QueryClientProvider>
     </GestureHandlerRootView>

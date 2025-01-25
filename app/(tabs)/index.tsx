@@ -26,10 +26,11 @@ export default function Index() {
     return <Text>Loading...</Text>;
   }
   return (
-    <Collection
-      collectionId={dailyLog.id}
-      collectionType={dailyLog.type}
-      title={dailyLog.title}
-    />
+    <>
+      <Text className="text-muted text-2xl text-center py-1">
+        {dailyLog.title}
+      </Text>
+      <Collection collectionId={dailyLog.id} />
+    </>
   );
 }

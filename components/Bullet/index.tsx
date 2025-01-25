@@ -194,12 +194,15 @@ export function NewBullet({
           />
         </View>
         <TextInput
-          className="text-foreground text-lg flex-1"
+          className={cn(
+            "text-lg flex-1",
+            isFocused ? "text-foreground" : "text-muted"
+          )}
           value={text}
           onChangeText={(newText) => {
             setText(newText);
           }}
-          onEndEditing={() => {
+          onSubmitEditing={() => {
             mutate(
               { collectionId, order, text, type },
               {

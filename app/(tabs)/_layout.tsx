@@ -6,13 +6,12 @@ import {
   TabTriggerSlotProps,
 } from "expo-router/ui";
 import React, { Ref, forwardRef } from "react";
-import { Text, View, Pressable, ScrollView, Platform } from "react-native";
+import { Text, View, Pressable } from "react-native";
 import { useColorScheme } from "nativewind";
 import Svg, { Path, SvgProps, Circle } from "react-native-svg";
 import { cssInterop } from "nativewind";
 import { StatusBar } from "expo-status-bar";
 import { cn } from "@/lib/utils";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useKeyboard } from "@/hooks/keyboard";
 
 cssInterop(Svg, {
@@ -31,19 +30,12 @@ cssInterop(Svg, {
  */
 export default function Layout() {
   const { colorScheme } = useColorScheme();
-  const { open: kbOpen, height: kbHeight } = useKeyboard();
+  const { open: kbOpen } = useKeyboard();
 
   return (
     <>
       <Tabs>
-        <SafeAreaView
-          className={cn(
-            "flex-1 bg-background text-foreground",
-            colorScheme === "dark" && "dark"
-          )}
-        >
-          <TabSlot />
-        </SafeAreaView>
+        <TabSlot />
         <TabList asChild>
           <View
             className={cn(

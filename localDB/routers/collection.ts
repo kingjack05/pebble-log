@@ -1,8 +1,38 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { db } from "../db";
 import { bulletsToCollections, collections } from "../schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { localDateQuery } from "../commonQueries";
+
+const collectionKeys = {
+  all: ["collections"] as const,
+  details: () => [...collectionKeys.all, "detail"] as const,
+  detail: (id: number) => [...collectionKeys.details(), id] as const,
+};
+export const getCollections = async () => {
+  const query = db
+    .select()
+    .from(collections)
+    .orderBy(desc(collections.createdUTCTimestamp));
+  return await query;
+};
+
+export const getCollection = async ({
+  collectionId,
+}: {
+  collectionId: number;
+}) => {
+  const query = db
+    .select()
+    .from(collections)
+    .where(eq(collections.id, collectionId));
+  return (await query)[0];
+};
+export const useCollectionQuery = (collectionId: number) =>
+  useQuery({
+    queryKey: collectionKeys.detail(collectionId),
+    queryFn: async () => await getCollection({ collectionId }),
+  });
 
 export const createDailyLog = () =>
   useMutation({

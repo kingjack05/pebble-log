@@ -19,15 +19,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 
-export function Collection({
-  collectionId,
-  collectionType,
-  title,
-}: {
-  collectionId: number;
-  collectionType: CollectionType;
-  title: string;
-}) {
+export function Collection({ collectionId }: { collectionId: number }) {
   const collectionBulletsQ = useCollectionBullets(collectionId);
   const bullets = collectionBulletsQ.data;
   const { open } = useKeyboard();
@@ -67,24 +59,10 @@ export function Collection({
     return <Text>Loading...</Text>;
   }
 
-  const collectionTypeText = {
-    daily: "DAILY LOG",
-    weekly: "WEEKLY LOG",
-    monthly: "MONTHLY LOG",
-    custom: "CUSTOM",
-  }[collectionType];
-
   return (
     <>
       <View className="flex-1">
         <ScrollView scrollEnabled={draggedIndex === undefined}>
-          <View className="flex flex-row justify-start items-baseline mb-2">
-            <Text className="text-muted text-base w-32 text-center border border-dashed border-muted mr-2">
-              {collectionTypeText}
-            </Text>
-            <CollectionTitle collectionId={collectionId} title={title} />
-          </View>
-
           <View className="relative">
             <Animated.View
               className="absolute h-2 bg-muted w-full"
@@ -137,56 +115,6 @@ export function Collection({
       <View className={cn("flex-none text-foreground", !open && "hidden")}>
         <BulletTypeEditorKeyboardToolbar />
       </View>
-    </>
-  );
-}
-
-function CollectionTitle({
-  collectionId,
-  title,
-}: {
-  collectionId: number;
-  title: string;
-}) {
-  const [text, setText] = useState(title);
-  const minInputWidth = 36;
-  const [underlineWidth, setUnderlineWidth] = useState(minInputWidth);
-  const hiddenText = useRef<Text>(null);
-  const updateTitleM = updateCollectionTitle();
-
-  return (
-    <>
-      <View className="relative flex-1">
-        <TextInput
-          className="text-foreground text-xl flex-0"
-          defaultValue={title}
-          onChangeText={(val) => {
-            setText(val);
-          }}
-          onEndEditing={() => {
-            updateTitleM
-              .mutateAsync({ collectionId, title: text })
-              .then(() => {});
-          }}
-          onLayout={(event) => {
-            setUnderlineWidth(event.nativeEvent.layout.width);
-          }}
-        />
-        <View
-          className="absolute bottom-0 left-0 h-[1px] w-20 border-muted border-dotted border"
-          style={{ width: underlineWidth }}
-        />
-      </View>
-
-      <Text
-        ref={hiddenText}
-        onLayout={(event) => {
-          setUnderlineWidth(event.nativeEvent.layout.width);
-        }}
-        className="opacity-0 absolute text-xl"
-      >
-        {text}
-      </Text>
     </>
   );
 }
