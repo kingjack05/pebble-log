@@ -33,7 +33,10 @@ export const useCollectionQuery = (collectionId: number) =>
     queryKey: collectionKeys.detail(collectionId),
     queryFn: async () => await getCollection({ collectionId }),
   });
-
+export const createCustomCollection = async ({ title }: { title: string }) => {
+  const mutation = db.insert(collections).values({ type: "custom", title });
+  await mutation;
+};
 export const createDailyLog = () =>
   useMutation({
     mutationFn: async () => {

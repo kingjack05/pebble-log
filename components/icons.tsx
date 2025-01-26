@@ -44,3 +44,19 @@ export const ChevronsUpIcon = (props: SvgProps) => (
     <Path d="m17 11-5-5-5 5M17 18l-5-5-5 5" />
   </Svg>
 );
+
+export const PlusIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    className="feather feather-plus"
+    {...props}
+  >
+    <Path d="M12 5v14M5 12h14" />
+  </Svg>
+);
