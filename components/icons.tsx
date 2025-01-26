@@ -29,3 +29,18 @@ export const SearchIcon = (props: SvgProps) => (
     <Path d="m21 21-4.35-4.35" />
   </Svg>
 );
+
+export const ChevronsUpIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    {...props}
+  >
+    <Path d="m17 11-5-5-5 5M17 18l-5-5-5 5" />
+  </Svg>
+);

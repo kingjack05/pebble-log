@@ -1,18 +1,15 @@
 import {
   Bullet,
+  BulletReflectionLink,
   BulletTypeEditorKeyboardToolbar,
   NewBullet,
 } from "@/components/Bullet";
 import { useKeyboard } from "@/hooks/keyboard";
 import { cn } from "@/lib/utils";
 import { useCollectionBullets } from "@/localDB/routers/bullets";
-import {
-  reorderBullet,
-  updateCollectionTitle,
-} from "@/localDB/routers/collection";
-import { CollectionType } from "@/localDB/schema";
-import React, { useRef, useState } from "react";
-import { ScrollView, Text, TextInput, View } from "react-native";
+import { reorderBullet } from "@/localDB/routers/collection";
+import React, { useState } from "react";
+import { ScrollView, Text, View } from "react-native";
 import { useMutation } from "@tanstack/react-query";
 import Animated, {
   useAnimatedStyle,
@@ -113,6 +110,7 @@ export function Collection({ collectionId }: { collectionId: number }) {
         </ScrollView>
       </View>
       <View className={cn("flex-none text-foreground", !open && "hidden")}>
+        <BulletReflectionLink />
         <BulletTypeEditorKeyboardToolbar />
       </View>
     </>

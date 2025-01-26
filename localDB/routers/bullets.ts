@@ -37,6 +37,18 @@ export const useCollectionBullets = (collectionId: number) =>
     },
   });
 
+const getBulletDetail = async ({ bulletId }: { bulletId: number }) => {
+  const res = await db.select().from(bullets).where(eq(bullets.id, bulletId));
+  return res[0];
+};
+export const useBulletDetail = ({ bulletId }: { bulletId: number }) =>
+  useQuery({
+    queryKey: bulletKeys.detail(bulletId),
+    queryFn: async () => {
+      return await getBulletDetail({ bulletId });
+    },
+  });
+
 export const addBulletToCollection = async ({
   text,
   type,
@@ -84,7 +96,6 @@ export const updateBulletType = () =>
       await mutation;
     },
   });
-
 export const updateBulletText = async ({
   bulletId,
   text,
@@ -95,6 +106,19 @@ export const updateBulletText = async ({
   const mutation = db
     .update(bullets)
     .set({ text })
+    .where(eq(bullets.id, bulletId));
+  await mutation;
+};
+export const updateBulletReflection = async ({
+  bulletId,
+  reflection,
+}: {
+  bulletId: number;
+  reflection: string;
+}) => {
+  const mutation = db
+    .update(bullets)
+    .set({ reflection })
     .where(eq(bullets.id, bulletId));
   await mutation;
 };

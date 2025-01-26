@@ -31,6 +31,8 @@ import {
   PanGestureChangeEventPayload,
   PanGestureHandlerEventPayload,
 } from "react-native-gesture-handler";
+import { ChevronsUpIcon } from "../icons";
+import { Link } from "expo-router";
 
 const draftBulletTypeStore = createStore({
   context: {
@@ -230,6 +232,30 @@ export function NewBullet({
         />
       </View>
     </>
+  );
+}
+
+export function BulletReflectionLink() {
+  const draftData = useSelector(
+    draftBulletTypeStore,
+    ({ context }) => context.draftData
+  );
+
+  if (!draftData || draftData.draftType !== "edit") {
+    return null;
+  }
+
+  return (
+    <View className="flex items-center justify-center mb-2">
+      <Link
+        href={{
+          pathname: "/bullets/[id]",
+          params: { id: String(draftData.bulletId) },
+        }}
+      >
+        <ChevronsUpIcon className="text-muted" />
+      </Link>
+    </View>
   );
 }
 
