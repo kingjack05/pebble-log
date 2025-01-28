@@ -314,7 +314,7 @@ export function BulletTypeEditorKeyboardToolbar() {
         })}
       </View>
       <Pressable
-        className="flex-none"
+        className="flex-none pr-2"
         onPress={() => {
           if (draftData.draftType === "edit") {
             const bulletId = draftData.bulletId;
