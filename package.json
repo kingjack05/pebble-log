@@ -3,14 +3,16 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "pnpx expose-wsl@latest && expo start",
-    "start:tunnel": "expo start --tunnel",
+    "start": "APP_VARIANT=development pnpx expose-wsl@latest && expo start",
+    "start:tunnel": "APP_VARIANT=development expo start --tunnel",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint",
+    "build:development": "eas build --platform android --profile development",
+    "build:preview.android": "eas build --platform android --profile preview",
     "localDB:migrate": "drizzle-kit generate"
   },
   "jest": {
