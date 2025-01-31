@@ -6,6 +6,9 @@ module.exports = function (api) {
       ["babel-preset-expo", { jsxImportSource: "nativewind" }],
       "nativewind/babel",
     ],
-    plugins: [["inline-import", { extensions: [".sql"] }]], // <-- add this
+    plugins: [
+      "@babel/plugin-transform-class-static-block",
+      ["inline-import", { extensions: [".sql"] }],
+    ],
   };
 };

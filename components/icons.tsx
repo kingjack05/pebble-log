@@ -60,3 +60,19 @@ export const PlusIcon = (props: SvgProps) => (
     <Path d="M12 5v14M5 12h14" />
   </Svg>
 );
+
+export const CloudIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    className="feather feather-cloud"
+    {...props}
+  >
+    <Path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+  </Svg>
+);

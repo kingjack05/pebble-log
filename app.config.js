@@ -57,6 +57,7 @@ export default {
         backgroundColor: "#ffffff",
       },
     ],
+    "expo-secure-store",
   ],
   experiments: {
     typedRoutes: true,
