@@ -26,6 +26,13 @@ export const bullets = sqliteTable("bullets", {
     enum: bulletTypes,
   }).notNull(),
   text: text().notNull(),
+  time: text({ mode: "json" })
+    .$type<{ start: number; end: number }[]>()
+    .$defaultFn(() => {
+      const utcEpoch = Math.floor(Date.now());
+      return [{ start: utcEpoch, end: utcEpoch }];
+    })
+    .notNull(),
   reflection: text(),
   createdUTCTimestamp: text().notNull().default(utcDateTimeQuery),
 });

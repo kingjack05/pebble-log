@@ -15,6 +15,13 @@
       "when": 1734864464309,
       "tag": "0001_sleepy_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1738471323929,
+      "tag": "0002_clever_champions",
+      "breakpoints": true
     }
   ]
 }

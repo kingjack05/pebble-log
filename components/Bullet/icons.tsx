@@ -13,6 +13,11 @@ cssInterop(Svg, {
   },
 });
 
+/**
+ * Icons from feather icons. https://feathericons.com
+ * Converted from svg with https://react-svgr.com/playground/?native=true&typescript=true
+ */
+
 export const TaskOpenIcon = (props: SvgProps) => (
   <Svg
     width={24}

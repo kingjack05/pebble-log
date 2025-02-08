@@ -122,6 +122,20 @@ export const updateBulletReflection = async ({
     .where(eq(bullets.id, bulletId));
   await mutation;
 };
+export const updateBulletTime = async ({
+  bulletId,
+  time,
+}: {
+  bulletId: number;
+  time: { start: number; end: number }[];
+}) => {
+  const timeSorted = time.sort((a, b) => a.start - b.start);
+  const mutation = db
+    .update(bullets)
+    .set({ time: timeSorted })
+    .where(eq(bullets.id, bulletId));
+  await mutation;
+};
 
 export const deleteBullet = async ({ bulletId }: { bulletId: number }) => {
   const mutation = db.delete(bullets).where(eq(bullets.id, bulletId));
