@@ -13,7 +13,7 @@ export const getCollections = async () => {
   const query = db
     .select()
     .from(collections)
-    .orderBy(desc(collections.createdUTCTimestamp));
+    .orderBy(desc(collections.pinned), desc(collections.createdUTCTimestamp));
   return await query;
 };
 
@@ -76,6 +76,19 @@ export const updateCollectionTitle = () =>
       await mutation;
     },
   });
+export const updateCollectionPinned = async ({
+  collectionId,
+  pinned,
+}: {
+  collectionId: number;
+  pinned: boolean;
+}) => {
+  const mutation = db
+    .update(collections)
+    .set({ pinned })
+    .where(eq(collections.id, collectionId));
+  await mutation;
+};
 
 const bulletOrderSpacing = 100;
 export const reorderBullet = async ({

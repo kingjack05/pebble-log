@@ -1,4 +1,4 @@
-import { PlusIcon, SearchIcon } from "@/components/icons";
+import { FeatherIcon, PlusIcon } from "@/components/icons";
 import {
   createCustomCollection,
   getCollections,
@@ -40,17 +40,28 @@ export default function Collections() {
         contentContainerStyle={{ paddingTop: height * 0.3 }}
         data={data}
         keyExtractor={(i) => String(i.id)}
-        renderItem={({ item: { id, title } }) => (
-          <Link
-            href={{
-              pathname: "/collections/[id]",
-              params: { id: String(id) },
-            }}
-            className="text-foreground underline text-lg"
-            style={{ height: 32 }}
-          >
-            {title}
-          </Link>
+        renderItem={({ item: { id, title, pinned } }) => (
+          <View className="flex-row items-center">
+            {pinned && (
+              <View className="pb-1 mr-1">
+                <FeatherIcon
+                  className="text-foreground"
+                  width={18}
+                  height={18}
+                />
+              </View>
+            )}
+            <Link
+              href={{
+                pathname: "/collections/[id]",
+                params: { id: String(id) },
+              }}
+              className="text-foreground underline text-lg"
+              style={{ height: 32 }}
+            >
+              {title}
+            </Link>
+          </View>
         )}
       />
       <Modal

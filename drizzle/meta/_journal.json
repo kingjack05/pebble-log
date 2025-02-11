@@ -22,6 +22,13 @@
       "when": 1738471323929,
       "tag": "0002_clever_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1739281691952,
+      "tag": "0003_vengeful_viper",
+      "breakpoints": true
     }
   ]
 }

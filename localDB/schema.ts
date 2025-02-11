@@ -55,6 +55,7 @@ export const collections = sqliteTable("collections", {
     enum: ["daily", "weekly", "monthly", "custom"],
   }).notNull(),
   title: text().notNull(),
+  pinned: integer({ mode: "boolean" }).notNull().default(false),
   createdLocalDate: text().notNull().default(localDateQuery),
   createdUTCTimestamp: text().notNull().default(utcDateTimeQuery),
 });
