@@ -1,0 +1,1 @@
+ALTER TABLE `collections` ADD `filters` text DEFAULT '[]' NOT NULL;

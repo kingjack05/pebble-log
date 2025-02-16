@@ -1,6 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { db } from "../db";
-import { bulletsToCollections, collections } from "../schema";
+import {
+  bulletsToCollections,
+  CollectionFilters,
+  collections,
+} from "../schema";
 import { desc, eq } from "drizzle-orm";
 import { localDateQuery } from "../commonQueries";
 
@@ -89,16 +93,31 @@ export const updateCollectionPinned = async ({
     .where(eq(collections.id, collectionId));
   await mutation;
 };
+export const updateCollectionFilters = async ({
+  collectionId,
+  filters,
+}: {
+  collectionId: number;
+  filters: CollectionFilters;
+}) => {
+  const mutation = db
+    .update(collections)
+    .set({ filters })
+    .where(eq(collections.id, collectionId));
+  await mutation;
+};
 
 const bulletOrderSpacing = 100;
 export const reorderBullet = async ({
   bulletId,
   collectionId,
-  toIndex,
+  targetBulletId,
+  position,
 }: {
   bulletId: number;
   collectionId: number;
-  toIndex: number;
+  targetBulletId: number;
+  position: "before" | "after";
 }) => {
   const mutation = db.transaction(async (tx) => {
     const bulletsInCollection = await tx
@@ -106,6 +125,9 @@ export const reorderBullet = async ({
       .from(bulletsToCollections)
       .where(eq(bulletsToCollections.collectionId, collectionId))
       .orderBy(bulletsToCollections.order);
+    const toIndex =
+      bulletsInCollection.findIndex((i) => i.bulletId === targetBulletId) +
+      (position === "after" ? 1 : 0);
 
     const isInsertingToFirst = toIndex === 0;
     const isInsertingToLast = toIndex === bulletsInCollection.length;

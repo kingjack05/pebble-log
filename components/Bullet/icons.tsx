@@ -130,3 +130,14 @@ export const UndefinedIcon = (props: SvgProps) => (
 export const NullIcon = (props: SvgProps) => {
   return <Svg {...props} />;
 };
+
+export const BulletTypeToIcon = {
+  "task.open": TaskOpenIcon,
+  "task.done": TaskDoneIcon,
+  event: EventIcon,
+  note: NoteIcon,
+  gratitude: GratitudeIcon,
+  win: WinIcon,
+  undefined: UndefinedIcon,
+  null: NullIcon,
+} as const;

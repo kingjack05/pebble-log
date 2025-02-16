@@ -7,7 +7,10 @@ import {
 import { useKeyboard } from "@/hooks/keyboard";
 import { cn } from "@/lib/utils";
 import { useCollectionBullets } from "@/localDB/routers/bullets";
-import { reorderBullet } from "@/localDB/routers/collection";
+import {
+  reorderBullet,
+  useCollectionQuery,
+} from "@/localDB/routers/collection";
 import React, { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useMutation } from "@tanstack/react-query";
@@ -17,6 +20,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 export function Collection({ collectionId }: { collectionId: number }) {
+  const { data } = useCollectionQuery(collectionId);
   const collectionBulletsQ = useCollectionBullets(collectionId);
   const bullets = collectionBulletsQ.data;
   const { open } = useKeyboard();
@@ -52,9 +56,15 @@ export function Collection({ collectionId }: { collectionId: number }) {
   });
   const { mutate } = useMutation({ mutationFn: reorderBullet });
 
-  if (!bullets) {
+  if (!bullets || !data) {
     return <Text>Loading...</Text>;
   }
+  const hiddenBulletTypes = data.filters
+    .filter((i) => i.type === "bulletType.hide")
+    .map((i) => i.value);
+  const bulletsFiltered = bullets.filter(
+    (i) => !hiddenBulletTypes.includes(i.bullets.type)
+  );
 
   return (
     <>
@@ -65,7 +75,7 @@ export function Collection({ collectionId }: { collectionId: number }) {
               className="absolute h-2 bg-muted w-full"
               style={draggableBarStyle}
             ></Animated.View>
-            {bullets.map(({ bullets: bullet }, index) => (
+            {bulletsFiltered.map(({ bullets: bullet }, index) => (
               <View key={bullet.id}>
                 <Bullet
                   id={bullet.id}
@@ -79,18 +89,24 @@ export function Collection({ collectionId }: { collectionId: number }) {
                   }}
                   onEndDrag={() => {
                     setDraggedIndex(undefined);
-                    const dragToIndex = Math.max(
+                    const dragBefore = translateY.value < 0;
+                    const dragTargetBulletIndex = Math.max(
                       0,
                       Math.min(
-                        index + 1 + Math.floor(translateY.value / bulletHeight),
-                        bullets.length
+                        index +
+                          Math.floor(translateY.value / bulletHeight) +
+                          (dragBefore ? 1 : 0),
+                        bulletsFiltered.length
                       )
                     );
+                    const targetBulletId =
+                      bulletsFiltered[dragTargetBulletIndex].bullets.id;
                     mutate(
                       {
                         bulletId: bullet.id,
                         collectionId,
-                        toIndex: dragToIndex,
+                        targetBulletId,
+                        position: dragBefore ? "before" : "after",
                       },
                       {
                         onError(error, variables, context) {
@@ -103,7 +119,7 @@ export function Collection({ collectionId }: { collectionId: number }) {
               </View>
             ))}
             <NewBullet
-              order={(bullets.length + 1) * 100}
+              order={(bulletsFiltered.length + 1) * 100}
               collectionId={collectionId}
             />
           </View>

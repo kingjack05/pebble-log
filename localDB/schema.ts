@@ -49,6 +49,7 @@ export const collectionTypes = [
   "custom",
 ] as const;
 export type CollectionType = (typeof collectionTypes)[number];
+export type CollectionFilters = { type: "bulletType.hide"; value: BulletType }[];
 export const collections = sqliteTable("collections", {
   id: integer().primaryKey({ autoIncrement: true }),
   type: text({
@@ -56,9 +57,15 @@ export const collections = sqliteTable("collections", {
   }).notNull(),
   title: text().notNull(),
   pinned: integer({ mode: "boolean" }).notNull().default(false),
+  filters: text({ mode: "json" })
+    .$type<CollectionFilters>()
+    .notNull()
+    .default([]),
   createdLocalDate: text().notNull().default(localDateQuery),
   createdUTCTimestamp: text().notNull().default(utcDateTimeQuery),
 });
+const collectionsSchema = createSelectSchema(collections);
+export type Collection = Zod.infer<typeof collectionsSchema>;
 export const collectionsRelations = relations(collections, ({ many }) => ({
   collectionsToBullets: many(bulletsToCollections),
 }));
