@@ -49,7 +49,10 @@ export const collectionTypes = [
   "custom",
 ] as const;
 export type CollectionType = (typeof collectionTypes)[number];
-export type CollectionFilters = { type: "bulletType.hide"; value: BulletType }[];
+export type CollectionFilters = {
+  type: "bulletType.hide";
+  value: BulletType;
+}[];
 export const collections = sqliteTable("collections", {
   id: integer().primaryKey({ autoIncrement: true }),
   type: text({
@@ -81,14 +84,12 @@ export const bulletsToCollections = sqliteTable(
       .notNull(),
     order: integer().notNull(),
   },
-  (table) => {
-    return {
-      id: primaryKey({ columns: [table.bulletId, table.collectionId] }),
-      orderIsPositive: check("orderIsPositive", sql`${table.order} > 0`),
-    };
-  }
+  (table) => [
+    primaryKey({ name: "id", columns: [table.bulletId, table.collectionId] }),
+    check("orderIsPositive", sql`${table.order} > 0`),
+  ]
 );
-export const usersToGroupsRelations = relations(
+export const bulletsToCollectionsRelations = relations(
   bulletsToCollections,
   ({ one }) => ({
     bullet: one(bullets, {
@@ -101,3 +102,37 @@ export const usersToGroupsRelations = relations(
     }),
   })
 );
+
+export const habits = sqliteTable("habits", {
+  id: integer().primaryKey({ autoIncrement: true }),
+  title: text().notNull(),
+  frequency: integer().notNull().default(1),
+  scheduledTo: text(),
+});
+export const habitsRelations = relations(habits, ({ many }) => ({
+  completions: many(habitCompletions),
+}));
+
+const habitStatusEnum = [
+  "scheduled",
+  "completed",
+  "neutral",
+  "missed",
+] as const;
+export const habitCompletions = sqliteTable(
+  "habitCompletions",
+  {
+    habitId: integer()
+      .notNull()
+      .references(() => habits.id),
+    date: text().notNull(),
+    status: text({ enum: habitStatusEnum }).notNull().default("scheduled"),
+  },
+  (t) => [primaryKey({ columns: [t.date, t.habitId] })]
+);
+const habitCompletionsRelations = relations(habitCompletions, ({ one }) => ({
+  habit: one(habits, {
+    fields: [habitCompletions.habitId],
+    references: [habits.id],
+  }),
+}));

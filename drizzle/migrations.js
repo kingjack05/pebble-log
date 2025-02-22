@@ -6,6 +6,7 @@ import m0001 from './0001_sleepy_serpent_society.sql';
 import m0002 from './0002_clever_champions.sql';
 import m0003 from './0003_vengeful_viper.sql';
 import m0004 from './0004_futuristic_bedlam.sql';
+import m0005 from './0005_early_madame_masque.sql';
 
   export default {
     journal,
@@ -14,7 +15,8 @@ import m0004 from './0004_futuristic_bedlam.sql';
 m0001,
 m0002,
 m0003,
-m0004
+m0004,
+m0005
     }
   }
   
