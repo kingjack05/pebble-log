@@ -6,7 +6,7 @@ import {
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
-import { createSelectSchema } from "drizzle-zod";
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
 import { localDateQuery, utcDateTimeQuery } from "./commonQueries";
 
 export const bulletTypes = [
@@ -106,9 +106,12 @@ export const bulletsToCollectionsRelations = relations(
 export const habits = sqliteTable("habits", {
   id: integer().primaryKey({ autoIncrement: true }),
   title: text().notNull(),
+  active: integer({ mode: "boolean" }).notNull().default(true),
   frequency: integer().notNull().default(1),
-  scheduledTo: text(),
+  scheduledTo: text().notNull().default("2025-01-01"),
 });
+const createHabitSchema = createInsertSchema(habits);
+export type createHabitSchema = Zod.infer<typeof createHabitSchema>;
 export const habitsRelations = relations(habits, ({ many }) => ({
   completions: many(habitCompletions),
 }));
