@@ -16,6 +16,7 @@ export const trackersQueryKeys = {
     ["habitCompletions", habitId, { fromDate, toDate }] as const,
   habitCompletionsByDate: (date: string) =>
     ["habitCompletions", { date }] as const,
+  trackerScoreForDate: (date: string) => ["trackerScore", { date }] as const,
 };
 
 export async function getHabits() {
@@ -126,4 +127,25 @@ export async function updateHabitCompletionStatus({
       )
     );
   await mutation;
+}
+
+export async function getTrackerStore({ date }: { date: string }) {
+  const habitCompletionsRes = await db
+    .select()
+    .from(habitCompletions)
+    .where(eq(habitCompletions.date, date));
+  if (habitCompletionsRes.length === 0) return 0;
+
+  const habitScore =
+    habitCompletionsRes.reduce((prev, curr) => {
+      const statusScoreMap = {
+        scheduled: 0,
+        completed: 1,
+        neutral: 0.5,
+      } as const;
+      const score = statusScoreMap[curr.status];
+      return prev + score;
+    }, 0) / habitCompletionsRes.length;
+
+  return habitScore;
 }

@@ -1,9 +1,10 @@
 import { getDatesBetween, getDateStr } from "@/lib/dateTime";
-import { cn } from "@/lib/utils";
+import { cn, range } from "@/lib/utils";
 import {
   addHabit,
   getHabitCompletions,
   getHabits,
+  getTrackerStore,
   scheduleHabits,
   trackersQueryKeys,
 } from "@/localDB/routers/tracker";
@@ -46,6 +47,8 @@ const Tracker = () => {
           </View>
         );
       })}
+      <View className="h-0.5 bg-card mt-1 mb-0.5" />
+      <Score />
       <Pressable
         onPress={() => {
           setIsAddHabitModalOpen(true);
@@ -244,6 +247,49 @@ const HabitCompletionRow = ({
           ))}
         </View>
       </View>
+    </View>
+  );
+};
+const Score = () => {
+  const today = new Date();
+  const thisSunday = startOfWeek(today, { weekStartsOn: 0 });
+  const datesPassedThisWeek = getDatesBetween(thisSunday, today);
+  const datesPassedThisWeekStr = datesPassedThisWeek.map(getDateStr);
+  const remainingDays = 7 - datesPassedThisWeek.length;
+
+  return (
+    <View className="flex-row w-full justify-evenly items-center">
+      <View className="w-24">
+        <Text className="text-muted text-lg py-1">Score</Text>
+      </View>
+      <View className="flex-grow">
+        <View className="flex-row justify-around items-center">
+          {datesPassedThisWeekStr.map((i) => (
+            <View key={i}>
+              <ScoreForDate date={i} />
+            </View>
+          ))}
+          {range(0, remainingDays).map((i, index) => (
+            <View key={index} className="h-1" style={{ width: 20 }} />
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+};
+const ScoreForDate = ({ date }: { date: string }) => {
+  const { data } = useQuery({
+    queryKey: trackersQueryKeys.trackerScoreForDate(date),
+    queryFn: async () => {
+      return await getTrackerStore({ date });
+    },
+  });
+  if (!data) return;
+
+  const score = Math.floor(data * 100);
+  return (
+    <View>
+      <Text className="text-foreground">{score}</Text>
     </View>
   );
 };
