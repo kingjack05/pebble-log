@@ -116,12 +116,7 @@ export const habitsRelations = relations(habits, ({ many }) => ({
   completions: many(habitCompletions),
 }));
 
-const habitStatusEnum = [
-  "scheduled",
-  "completed",
-  "neutral",
-  "missed",
-] as const;
+const habitStatusEnum = ["scheduled", "completed", "neutral"] as const;
 export const habitCompletions = sqliteTable(
   "habitCompletions",
   {

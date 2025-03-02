@@ -1,10 +1,14 @@
+import { getDatesBetween, getDateStr } from "@/lib/dateTime";
 import { cn } from "@/lib/utils";
 import {
   addHabit,
+  getHabitCompletions,
   getHabits,
+  scheduleHabits,
   trackersQueryKeys,
 } from "@/localDB/routers/tracker";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { add, differenceInCalendarDays, startOfWeek, subWeeks } from "date-fns";
 import { useRef, useState } from "react";
 import { View, Text, Pressable, Modal, TextInput } from "react-native";
 
@@ -25,6 +29,9 @@ const Tracker = () => {
   const [isAddHabitModalOpen, setIsAddHabitModalOpen] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const { mutate } = useMutation({ mutationFn: addHabit });
+  const { mutate: scheduleHabitsMutate } = useMutation({
+    mutationFn: scheduleHabits,
+  });
   const newHabitInputRef = useRef<TextInput>(null);
 
   if (!habits) return;
@@ -34,8 +41,8 @@ const Tracker = () => {
       <Days />
       {habits.map((i) => {
         return (
-          <View key={i.id} className="">
-            <Text className="text-foreground text-lg py-1">{i.title}</Text>
+          <View key={i.id}>
+            <HabitCompletionRow habitId={i.id} title={i.title} />
           </View>
         );
       })}
@@ -79,6 +86,7 @@ const Tracker = () => {
                   { title: newHabitName },
                   {
                     onSuccess: () => {
+                      scheduleHabitsMutate();
                       setIsAddHabitModalOpen(false);
                     },
                   }
@@ -99,27 +107,143 @@ const Days = () => {
   const weekday = new Date().getDay();
   return (
     <View className="flex-row w-full justify-evenly">
-      <View className="flex-grow-0 w-20" />
-      <View className="flex-grow flex-row justify-evenly">
-        {days.map((i, index) => {
-          return (
-            <View key={i} className="col-span-1">
-              <Text
-                className={cn(
-                  weekday === index ? "text-foreground" : "text-muted"
-                )}
-              >
-                {i}
-              </Text>
-            </View>
-          );
-        })}
+      <View className="flex-grow-0 w-24" />
+      <View className="flex-grow">
+        <View className="flex flex-row justify-around">
+          {days.map((i, index) => {
+            return (
+              <View key={i}>
+                <Text
+                  style={{ width: 20 }}
+                  className={cn(
+                    weekday === index ? "text-foreground" : "text-muted"
+                  )}
+                >
+                  {i}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
 };
-const HabitCompletionRow = () => {
-  return <View></View>;
-};
+const HabitCompletionRow = ({
+  habitId,
+  title,
+}: {
+  habitId: number;
+  title: string;
+}) => {
+  const today = new Date();
+  const thisSunday = startOfWeek(today, { weekStartsOn: 0 });
+  const lastSunday = subWeeks(thisSunday, 1);
+  const lastSundayStr = getDateStr(lastSunday);
+  const thisSaturday = add(thisSunday, { days: 6 });
+  const thisSaturdayStr = getDateStr(thisSaturday);
 
-const NewHabitModal = () => {};
+  const { data: habitCompletions } = useQuery({
+    queryKey: trackersQueryKeys.habitCompletions(
+      habitId,
+      lastSundayStr,
+      thisSaturdayStr
+    ),
+    queryFn: async () => {
+      return await getHabitCompletions({
+        habitId,
+        fromDate: lastSundayStr,
+        toDate: thisSaturdayStr,
+      });
+    },
+  });
+  if (!habitCompletions) return;
+
+  const titleMaxLength = 8;
+  const datesThisWeek = getDatesBetween(thisSunday, thisSaturday);
+  const datesThisWeekStr = datesThisWeek.map(getDateStr);
+  const completionsPrevWeek = habitCompletions.filter(
+    (i) => !datesThisWeekStr.includes(i.date)
+  );
+  const streakNodes = ["completed", "neutral"];
+  const streakAliveFromPrevWeek = streakNodes.includes(
+    completionsPrevWeek.at(-1)?.status ?? ""
+  );
+  const completionsThisWeek = habitCompletions.filter((i) =>
+    datesThisWeekStr.includes(i.date)
+  );
+  if (completionsThisWeek.length === 0) return;
+  function getNeighboringPairs<T>(arr: T[]) {
+    return arr.slice(0, -1).map((prev, i) => ({ prev, next: arr[i + 1] }));
+  }
+  const totalSlots = 7 * 2;
+  const slotsHead =
+    1 +
+    2 *
+      differenceInCalendarDays(
+        new Date(completionsThisWeek[0].date),
+        thisSunday
+      );
+  const slotsBody = getNeighboringPairs(completionsThisWeek).reduce(
+    (sum, { prev, next }) =>
+      sum +
+      2 * differenceInCalendarDays(new Date(next.date), new Date(prev.date)),
+    0
+  );
+  const slotsTail = totalSlots - slotsHead - slotsBody;
+  const streaks = [
+    {
+      node: completionsThisWeek[0],
+      slots: slotsHead,
+      streak: streakAliveFromPrevWeek,
+    },
+    ...getNeighboringPairs(completionsThisWeek).map(({ prev, next }) => ({
+      node: next,
+      slots:
+        2 * differenceInCalendarDays(new Date(next.date), new Date(prev.date)),
+      streak:
+        streakNodes.includes(prev.status) && streakNodes.includes(next.status),
+    })),
+    { node: null, slots: slotsTail, streak: false },
+  ];
+
+  return (
+    <View className="flex-row w-full justify-evenly items-center">
+      <View className=" w-24">
+        <Text className="text-foreground text-lg py-1">
+          {title.length > titleMaxLength
+            ? `${title.slice(0, titleMaxLength)}...`
+            : title}
+        </Text>
+      </View>
+      <View className="flex-grow">
+        <View className="flex-row justify-start">
+          {streaks.map((i, index) => (
+            <View
+              className="flex-row items-center"
+              style={{ flex: i.slots }}
+              key={index}
+            >
+              <View
+                className={cn(
+                  "flex-grow h-0.5 ml-0.5",
+                  i.streak ? "bg-foreground" : "bg-transparent"
+                )}
+              />
+              {i.node && (
+                <View
+                  className={cn("flex-grow-0 rounded-full w-2 h-2 -mr-0.5", {
+                    "border border-dotted border-muted":
+                      i.node.status === "scheduled",
+                    "bg-foreground": i.node.status === "completed",
+                    "bg-muted": i.node.status === "neutral",
+                  })}
+                />
+              )}
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+};

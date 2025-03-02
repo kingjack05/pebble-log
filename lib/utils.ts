@@ -19,3 +19,11 @@ export function debounce<F extends (...args: Parameters<F>) => ReturnType<F>>(
     timeout = setTimeout(() => func(...args), waitFor);
   };
 }
+
+export function range(start: number, stop: number, step = 1) {
+  const result = [];
+  for (let i = start; i < stop; i += step) {
+    result.push(i);
+  }
+  return result;
+}
