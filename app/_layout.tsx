@@ -8,11 +8,16 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import * as SplashScreen from "expo-splash-screen";
 import { db } from "@/localDB/db";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useColorScheme } from "nativewind";
 import { cn } from "@/lib/utils";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useCallback, useEffect, useState } from "react";
+import { scheduleHabits } from "@/localDB/routers/tracker";
+
+SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
@@ -22,8 +27,32 @@ const queryClient = new QueryClient({
   }),
 });
 export default function RootLayout() {
-  const { success, error } = useMigrations(db, migrations);
+  const { success: migrationSucceeded, error } = useMigrations(db, migrations);
   const { colorScheme } = useColorScheme();
+  const [appIsReady, setAppIsReady] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        if (migrationSucceeded) {
+          await scheduleHabits();
+        }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+    prepare();
+  }, []);
+
+  const onLayoutRootView = useCallback(() => {
+    if (appIsReady) {
+      SplashScreen.hide();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady || !migrationSucceeded) return;
 
   if (error) {
     return (
@@ -32,15 +61,9 @@ export default function RootLayout() {
       </View>
     );
   }
-  if (!success) {
-    return (
-      <View>
-        <Text>Migration is in progress...</Text>
-      </View>
-    );
-  }
+
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView onLayout={onLayoutRootView}>
       <QueryClientProvider client={queryClient}>
         <Stack
           screenOptions={{ headerShown: false }}

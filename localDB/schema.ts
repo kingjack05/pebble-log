@@ -128,6 +128,8 @@ export const habitCompletions = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.date, t.habitId] })]
 );
+const habitCompletionsSchema = createSelectSchema(habitCompletions);
+export type HabitCompletion = Zod.infer<typeof habitCompletionsSchema>;
 const habitCompletionsRelations = relations(habitCompletions, ({ one }) => ({
   habit: one(habits, {
     fields: [habitCompletions.habitId],

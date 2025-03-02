@@ -162,3 +162,54 @@ export const FilterIcon = (props: SvgProps) => (
     <Path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
   </Svg>
 );
+
+export const CircleIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    {...props}
+  >
+    <Circle cx={12} cy={12} r={10} />
+  </Svg>
+);
+
+export const CheckCircleIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    {...props}
+  >
+    <Path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <Path d="M22 4 12 14.01l-3-3" />
+  </Svg>
+);
+
+export const MinusCircleIcon = (props: SvgProps) => (
+  <Svg
+    width={24}
+    height={24}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={2}
+    className="feather feather-minus-circle"
+    {...props}
+  >
+    <Circle cx={12} cy={12} r={10} />
+    <Path d="M8 12h8" />
+  </Svg>
+);

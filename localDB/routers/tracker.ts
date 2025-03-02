@@ -1,13 +1,21 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { db } from "../db";
-import { habits, habitCompletions, createHabitSchema } from "../schema";
+import {
+  habits,
+  habitCompletions,
+  createHabitSchema,
+  HabitCompletion,
+} from "../schema";
 import { and, eq, inArray, gte, lte } from "drizzle-orm";
 import { range } from "@/lib/utils";
+import { getDateStr } from "@/lib/dateTime";
 
 export const trackersQueryKeys = {
   habits: ["habits"] as const,
   habitCompletions: (habitId: number, fromDate: string, toDate: string) =>
     ["habitCompletions", habitId, { fromDate, toDate }] as const,
+  habitCompletionsByDate: (date: string) =>
+    ["habitCompletions", { date }] as const,
 };
 
 export async function getHabits() {
@@ -30,7 +38,7 @@ export async function scheduleHabits() {
   const daysTillSatNextWeek = 13 - currentDay;
   const saturdayNextWeek = new Date();
   saturdayNextWeek.setDate(today.getDate() + daysTillSatNextWeek);
-  const saturdayNextWeekStr = saturdayNextWeek.toISOString().split("T")[0];
+  const saturdayNextWeekStr = getDateStr(saturdayNextWeek);
   const habitsAlreadyScheduled = await db
     .select({ habitId: habitCompletions.habitId })
     .from(habitCompletions)
@@ -54,7 +62,7 @@ export async function scheduleHabits() {
     const daysToSchedule = range(0, daysTillSatNextWeek + 1, step).map((i) => {
       const day = new Date();
       day.setDate(day.getDate() + i);
-      return day.toISOString().split("T")[0];
+      return getDateStr(day);
     });
     return daysToSchedule;
   }
@@ -64,10 +72,12 @@ export async function scheduleHabits() {
       return daysToSchedule.map((date) => ({ habitId, date }));
     }
   );
-  await db
-    .insert(habitCompletions)
-    .values(habitCompletionsToInsert)
-    .onConflictDoNothing();
+  if (habitCompletionsToInsert.length > 0) {
+    await db
+      .insert(habitCompletions)
+      .values(habitCompletionsToInsert)
+      .onConflictDoNothing();
+  }
 }
 
 export async function getHabitCompletions({
@@ -90,4 +100,30 @@ export async function getHabitCompletions({
       )
     );
   return await query;
+}
+
+export async function getHabitCompletionsForDay({ date }: { date: string }) {
+  const query = db
+    .select()
+    .from(habits)
+    .where(and(eq(habits.active, true), eq(habitCompletions.date, date)))
+    .innerJoin(habitCompletions, eq(habits.id, habitCompletions.habitId));
+  return await query;
+}
+
+export async function updateHabitCompletionStatus({
+  date,
+  habitId,
+  status,
+}: HabitCompletion) {
+  const mutation = db
+    .update(habitCompletions)
+    .set({ status })
+    .where(
+      and(
+        eq(habitCompletions.date, date),
+        eq(habitCompletions.habitId, habitId)
+      )
+    );
+  await mutation;
 }
