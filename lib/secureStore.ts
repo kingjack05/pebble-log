@@ -7,7 +7,16 @@ const SecureConfigKey = [
   "backup.s3.bucket",
   "backup.s3.keyID",
   "backup.s3.key",
+  "oauth.fitbit.clientId",
+  "oauth.fitbit.refreshToken",
 ] as const;
+
+export const SecureConfigQueryKeys = {
+  all: ["secureConfig"] as const,
+  settings: () => [...SecureConfigQueryKeys.all, "settings"] as const,
+  backup: () => [...SecureConfigQueryKeys.settings(), "backup"] as const,
+  oauth: () => [...SecureConfigQueryKeys.settings(), "oauth"] as const,
+} as const;
 
 export async function setSecureConfig<
   K extends (typeof SecureConfigKey)[number]
@@ -28,5 +37,14 @@ export async function getBackupConfigs() {
     bucket: await getSecureConfig("backup.s3.bucket"),
     keyID: await getSecureConfig("backup.s3.keyID"),
     key: await getSecureConfig("backup.s3.key"),
+  };
+}
+
+export async function getOAuthConfigs() {
+  return {
+    fitbit: {
+      clientId: await getSecureConfig("oauth.fitbit.clientId"),
+      refreshToken: await getSecureConfig("oauth.fitbit.refreshToken"),
+    },
   };
 }

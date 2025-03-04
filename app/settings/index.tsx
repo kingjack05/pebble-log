@@ -1,4 +1,4 @@
-import { CloudIcon } from "@/components/icons";
+import { CloudIcon, KeyIcon } from "@/components/icons";
 import { Link } from "expo-router";
 import React from "react";
 import { View, Text, TextInput } from "react-native";
@@ -12,6 +12,12 @@ export default function SettingsPage() {
           <View className="flex-row items-center">
             <CloudIcon className="text-foreground" />
             <Text className="text-foreground text-xl pl-3">Backup</Text>
+          </View>
+        </Link>
+        <Link href="/settings/oauth" className=" bg-card p-4 rounded-lg pl-3">
+          <View className="flex-row items-center">
+            <KeyIcon className="text-foreground" />
+            <Text className="text-foreground text-xl pl-3">OAuth</Text>
           </View>
         </Link>
       </View>

@@ -27,7 +27,7 @@ export default {
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
-  scheme: "myapp",
+  scheme: "com.kingjack05.pebblelog",
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   ios: {
