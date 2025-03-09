@@ -1,4 +1,3 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { db } from "../db";
 import {
   habits,
@@ -16,7 +15,8 @@ export const trackersQueryKeys = {
     ["habitCompletions", habitId, { fromDate, toDate }] as const,
   habitCompletionsByDate: (date: string) =>
     ["habitCompletions", { date }] as const,
-  trackerScoreForDate: (date: string) => ["trackerScore", { date }] as const,
+  trackerScoreForDate: (date: string, type: "habit" | "external.fitbit") =>
+    ["trackerScore", type, { date }] as const,
 };
 
 export async function getHabits() {

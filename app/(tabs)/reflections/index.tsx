@@ -1,3 +1,4 @@
+import { FitbitCustomTrackers } from "@/components/screen/(tabs)/reflections/trackers/fitbit";
 import { getDatesBetween, getDateStr } from "@/lib/dateTime";
 import { cn, range } from "@/lib/utils";
 import {
@@ -18,6 +19,7 @@ export default function Reflections() {
     <View className="px-2 pt-1">
       <Text className="text-muted text-xl">Trackers</Text>
       <Tracker />
+      <FitbitCustomTrackers />
     </View>
   );
 }
@@ -279,7 +281,7 @@ const Score = () => {
 };
 const ScoreForDate = ({ date }: { date: string }) => {
   const { data } = useQuery({
-    queryKey: trackersQueryKeys.trackerScoreForDate(date),
+    queryKey: trackersQueryKeys.trackerScoreForDate(date, "habit"),
     queryFn: async () => {
       return await getTrackerStore({ date });
     },
