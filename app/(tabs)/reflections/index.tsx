@@ -1,3 +1,4 @@
+import { Draggable } from "@/components/draggable";
 import { FitbitCustomTrackers } from "@/components/screen/(tabs)/reflections/trackers/fitbit";
 import { getDatesBetween, getDateStr } from "@/lib/dateTime";
 import { cn, range } from "@/lib/utils";
@@ -6,6 +7,7 @@ import {
   getHabitCompletions,
   getHabits,
   getTrackerStore,
+  reorderHabit,
   scheduleHabits,
   trackersQueryKeys,
 } from "@/localDB/routers/tracker";
@@ -13,6 +15,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { add, differenceInCalendarDays, startOfWeek, subWeeks } from "date-fns";
 import { useRef, useState } from "react";
 import { View, Text, Pressable, Modal, TextInput } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 
 export default function Reflections() {
   return (
@@ -36,19 +42,96 @@ const Tracker = () => {
     mutationFn: scheduleHabits,
   });
   const newHabitInputRef = useRef<TextInput>(null);
+  const { mutate: reorder } = useMutation({ mutationFn: reorderHabit });
+  const [draggedIndex, setDraggedIndex] = useState<number | undefined>();
+  const translateY = useSharedValue(0);
+  const habitHeight = 32; // current implementation currently relies on bullet height being fixed
+  const draggableBarStyle = useAnimatedStyle(() => {
+    if (
+      draggedIndex === undefined ||
+      !habits ||
+      Math.abs(translateY.value) < habitHeight
+    )
+      return { opacity: 0 };
+
+    const dragToIndex = Math.max(
+      0,
+      Math.min(
+        draggedIndex + 1 + Math.floor(translateY.value / habitHeight),
+        habits.length
+      )
+    );
+    const barY = dragToIndex * habitHeight;
+
+    return {
+      opacity: 1,
+      transform: [
+        {
+          translateY: barY,
+        },
+      ],
+    };
+  });
 
   if (!habits) return;
 
   return (
-    <>
+    <View>
       <Days />
-      {habits.map((i) => {
-        return (
-          <View key={i.id}>
-            <HabitCompletionRow habitId={i.id} title={i.title} />
-          </View>
-        );
-      })}
+      <View className="relative">
+        <Animated.View
+          className="absolute h-2 bg-muted w-full"
+          style={draggableBarStyle}
+        ></Animated.View>
+        {habits.map((i, index) => {
+          return (
+            <View key={i.id}>
+              <Draggable
+                onStartDrag={(e) => {
+                  setDraggedIndex(index);
+                }}
+                onDrag={(e) => {
+                  translateY.value = e.translationY;
+                }}
+                onEndDrag={() => {
+                  setDraggedIndex(undefined);
+                  const dragBefore = translateY.value < 0;
+                  const dragTargetHabitIndex = Math.max(
+                    0,
+                    Math.min(
+                      index +
+                        Math.floor(translateY.value / habitHeight) +
+                        (dragBefore ? 1 : 0),
+                      habits.length
+                    )
+                  );
+                  const targetHabitId = habits[dragTargetHabitIndex].id;
+                  reorder(
+                    {
+                      habitId: i.id,
+                      targetHabitId,
+                      position: dragBefore ? "before" : "after",
+                    },
+                    {
+                      onError(error, variables, context) {
+                        console.log(error.stack);
+                      },
+                    }
+                  );
+                }}
+              >
+                <View
+                  collapsable={false}
+                  className="items-center"
+                  style={{ height: habitHeight }}
+                >
+                  <HabitCompletionRow habitId={i.id} title={i.title} />
+                </View>
+              </Draggable>
+            </View>
+          );
+        })}
+      </View>
       <View className="h-0.5 bg-card mt-1 mb-0.5" />
       <Score />
       <Pressable
@@ -87,8 +170,10 @@ const Tracker = () => {
             <Pressable
               className="mt-20 p-2 flex items-center border border-foreground"
               onPress={() => {
+                const lastHabitOrder = habits.at(-1)?.order ?? 1000;
+                const newHabitOrder = lastHabitOrder + 1000;
                 mutate(
-                  { title: newHabitName },
+                  { title: newHabitName, order: newHabitOrder },
                   {
                     onSuccess: () => {
                       scheduleHabitsMutate();
@@ -103,7 +188,7 @@ const Tracker = () => {
           </View>
         </Pressable>
       </Modal>
-    </>
+    </View>
   );
 };
 

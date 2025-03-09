@@ -50,6 +50,13 @@
       "when": 1740212727318,
       "tag": "0006_amused_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1741525138463,
+      "tag": "0007_closed_doomsday",
+      "breakpoints": true
     }
   ]
 }

@@ -20,7 +20,11 @@ export const trackersQueryKeys = {
 };
 
 export async function getHabits() {
-  const res = await db.select().from(habits).where(eq(habits.active, true));
+  const res = await db
+    .select()
+    .from(habits)
+    .where(eq(habits.active, true))
+    .orderBy(habits.order);
   return res;
 }
 
@@ -28,6 +32,66 @@ export async function addHabit(values: createHabitSchema) {
   const mutation = await db.insert(habits).values(values);
   return mutation;
 }
+
+const orderSpacing = 100;
+export const reorderHabit = async ({
+  habitId,
+  targetHabitId,
+  position,
+}: {
+  habitId: number;
+  targetHabitId: number;
+  position: "before" | "after";
+}) => {
+  const mutation = db.transaction(async (tx) => {
+    const habitsAll = await tx.select().from(habits).orderBy(habits.order);
+    const toIndex =
+      habitsAll.findIndex((i) => i.id === targetHabitId) +
+      (position === "after" ? 1 : 0);
+
+    const isInsertingToFirst = toIndex === 0;
+    const isInsertingToLast = toIndex === habitsAll.length;
+    const beforeItemOrder = isInsertingToFirst
+      ? 0
+      : habitsAll[toIndex - 1].order;
+    const nextItemOrder = isInsertingToLast
+      ? habitsAll[toIndex - 1].order
+      : habitsAll[toIndex].order;
+
+    const needsRebalancing = nextItemOrder - beforeItemOrder <= 1;
+    if (needsRebalancing) {
+      const habitsBefore = habitsAll
+        .slice(0, toIndex)
+        .filter((i) => i.id !== habitId);
+      const habitsAfter = habitsAll
+        .slice(toIndex)
+        .filter((i) => i.id !== habitId);
+      const reorderedHabits = [
+        ...habitsBefore,
+        habitsAll.find((i) => i.id === habitId)!,
+        ...habitsAfter,
+      ];
+      const transaction = reorderedHabits.map((i, index) =>
+        tx
+          .update(habits)
+          .set({
+            order: (index + 1) * orderSpacing,
+          })
+          .where(eq(habits.id, i.id))
+      );
+      await Promise.allSettled(transaction);
+    } else {
+      const itemNewOrder = isInsertingToLast
+        ? nextItemOrder + orderSpacing
+        : beforeItemOrder + Math.floor((nextItemOrder - beforeItemOrder) / 2);
+      await tx
+        .update(habits)
+        .set({ order: itemNewOrder })
+        .where(eq(habits.id, habitId));
+    }
+  });
+  await mutation;
+};
 
 export async function scheduleHabits() {
   const activeHabits = await db

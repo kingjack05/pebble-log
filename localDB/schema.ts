@@ -108,7 +108,7 @@ export const habits = sqliteTable("habits", {
   title: text().notNull(),
   active: integer({ mode: "boolean" }).notNull().default(true),
   frequency: integer().notNull().default(1),
-  scheduledTo: text().notNull().default("2025-01-01"),
+  order: integer().notNull().default(0),
 });
 const createHabitSchema = createInsertSchema(habits);
 export type createHabitSchema = Zod.infer<typeof createHabitSchema>;
