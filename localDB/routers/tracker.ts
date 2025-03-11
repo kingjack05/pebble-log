@@ -172,7 +172,8 @@ export async function getHabitCompletionsForDay({ date }: { date: string }) {
     .select()
     .from(habits)
     .where(and(eq(habits.active, true), eq(habitCompletions.date, date)))
-    .innerJoin(habitCompletions, eq(habits.id, habitCompletions.habitId));
+    .innerJoin(habitCompletions, eq(habits.id, habitCompletions.habitId))
+    .orderBy(habits.order);
   return await query;
 }
 

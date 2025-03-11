@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { db } from "../db";
 import {
   bulletsToCollections,
@@ -6,10 +6,12 @@ import {
   collections,
 } from "../schema";
 import { desc, eq } from "drizzle-orm";
-import { localDateQuery } from "../commonQueries";
+import { isMatch } from "date-fns";
 
-const collectionKeys = {
+export const collectionKeys = {
   all: ["collections"] as const,
+  dailyAll: () => [...collectionKeys.all, "daily"] as const,
+  daily: (date: string) => [...collectionKeys.dailyAll(), date] as const,
   details: () => [...collectionKeys.all, "detail"] as const,
   detail: (id: number) => [...collectionKeys.details(), id] as const,
 };
@@ -41,45 +43,29 @@ export const createCustomCollection = async ({ title }: { title: string }) => {
   const mutation = db.insert(collections).values({ type: "custom", title });
   await mutation;
 };
-export const createDailyLog = () =>
-  useMutation({
-    mutationFn: async () => {
-      const mutation = db
+
+export async function getDailyLogAndCreateIfEmpty({ date }: { date: string }) {
+  if (!isMatch(date, "yyyy-MM-dd")) {
+    throw new Error("Invalid date format");
+  }
+  const transaction = db.transaction(async (tx) => {
+    const dailyLog = await tx
+      .select()
+      .from(collections)
+      .where(eq(collections.createdLocalDate, date));
+    if (dailyLog.length > 0) {
+      return dailyLog[0];
+    } else {
+      const mutation = await tx
         .insert(collections)
-        .values({ type: "daily", title: localDateQuery });
-      await mutation;
-    },
+        .values({ type: "daily", title: date, createdLocalDate: date })
+        .returning();
+      return mutation[0];
+    }
   });
+  return await transaction;
+}
 
-export const getDailyLogForToday = () =>
-  useQuery({
-    queryKey: ["collection.getDailyLogForToday"],
-    queryFn: async () => {
-      const query = db
-        .select()
-        .from(collections)
-        .where(eq(collections.createdLocalDate, localDateQuery));
-      const res = await query;
-      return res.length > 0 ? res[0] : null;
-    },
-  });
-
-export const updateCollectionTitle = () =>
-  useMutation({
-    mutationFn: async ({
-      collectionId,
-      title,
-    }: {
-      collectionId: number;
-      title: string;
-    }) => {
-      const mutation = db
-        .update(collections)
-        .set({ title })
-        .where(eq(collections.id, collectionId));
-      await mutation;
-    },
-  });
 export const updateCollectionPinned = async ({
   collectionId,
   pinned,
